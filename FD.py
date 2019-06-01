@@ -57,15 +57,3 @@ class MaxHessian(object):
             return mu_b
         else:
             return None
-
-def f(x):
-    return x ** 2 + x + np.random.normal(0, 1)
-if __name__ == "__main__":
-    mh = MaxHessian(f, 1, tau_1 = 100, tau_2 = 0.1)
-    lst = []
-    for t in range(1000):
-        tmp = mh.estimate(0)
-        if tmp is not None:
-            lst.append(tmp)
-    lst = np.array(lst)
-    print(len(lst), np.mean(lst))
