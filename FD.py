@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.umath_tests import inner1d
 
 class MaxHessian(object):
     """Estimate the maximum absolute Hessian entry for function f"""
@@ -65,6 +66,12 @@ class MaxHessian(object):
         else:
             return None
 
+def f(x):
+    if len(x.shape) == 1:
+        x = x.reshape(1, -1)
+    n, d = x.shape
+    return inner1d(x, x) + x[:,0] ** 2 + np.random.normal(0, 0.01, n)
+
 def fd_gradient(f, x, eps, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
     dim = len(x)
@@ -72,19 +79,21 @@ def fd_gradient(f, x, eps, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     if mode == "fd":
         fx = f(x)
         h = 8 ** 0.25 * (eps / mu) ** 0.5
-        f_incr = []
-        for d in range(dim):
-            h_vec = np.zeros(dim)
-            h_vec[d] = h
-            f_incr.append(f(x + h_vec))
-        f_decr = np.ones(dim) * fx
+        h_mat = np.zeros((dim, dim))
+        h_mat[np.arange(dim), np.arange(dim)] = h
+        f_incr, f_decr = f(x + h_mat), fx
     else:
         h = 3 ** (1/3) * (eps / mu) ** (1/3)
-        f_incr, f_decr = [], []
-        for d in range(dim):
-            h_vec = np.zeros(dim)
-            h_vec[d] = h
-            f_incr.append(f(x + h_vec))
-            f_decr.append(f(x - h_vec))
+        h_mat = np.zeros((dim, dim))
+        h_mat[np.arange(dim), np.arange(dim)] = h
+        f_incr, f_decr = f(x + h_mat), f(x - h_mat)
         h *= 2
     return (f_incr - f_decr) / h
+
+if __name__ == "__main__":
+    lst = []
+    for _ in range(1000):
+        tmp = fd_gradient(f, np.array([5, 1]), 0.01)
+        if tmp is not None: lst.append(tmp)
+    lst = np.array(lst)
+    print(np.mean(lst, axis=0))
