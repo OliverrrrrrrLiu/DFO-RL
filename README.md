@@ -1,5 +1,7 @@
 # DFO-RL
 
-## Derivative Free Optimization with Quasi-Newton Methods
+## Derivative Free Optimization of Noisy Functions via Quasi-Newton Methods
 
-### Finite differences with error estimation
+###BFGS method with finite difference gradients
+
+#### Differencing interval estimated by ECnoise. Available at: http://www.mcs.anl.gov/~wild/cnoise/.
