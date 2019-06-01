@@ -24,3 +24,5 @@ output values:
 def phi(alpha):
 	t_ls += 1
 	return f(x_k + alpha*d_k)
+def phid(alpha):
+	t_ls += 1
