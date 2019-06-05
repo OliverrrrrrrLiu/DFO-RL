@@ -1,6 +1,70 @@
 import numpy as np
+import warnings
 
-def function(nf,fval):
+class ECNoise(object):
+    def __init__(self, f, x, h, breadth = 3, max_iter = 10, fval = None):
+        self.f = f
+        self.x = x
+        self.breadth = breadth
+        self.total = breadth * 2 + 1
+        self.h = h
+        self.fval = fval if fval is not None else f(x)
+        self.fvals = self.init_fvals()
+        self.max_iter = max_iter
+
+    def init_fvals(self):
+        return np.array([self.f(self.x - i * self.h) for i in range(self.breadth, 0, -1)] + [self.fval] +
+                        [self.f(self.x + i * self.h) for i in range(1, self.breadth + 1)])
+
+    def estimate_given_h(self):
+        fmax, fmin = np.max(self.fvals), np.min(self.fvals)
+        if (fmax - fmin) / max(abs(fmax), abs(fmin)) > 0.1:
+            return None, None, 3
+
+        fvals_ = np.copy(self.fvals)
+        gamma = 1.0
+        levels, dsgns = np.zeros(self.total - 1), np.zeros(self.total - 1)
+
+        for j in range(self.total-1):
+            for i in range(self.total-j-1):
+                fvals_[i] = fvals_[i+1] - fvals_[i]
+            if j == 0 and np.sum(fvals_[0:self.total-1] == 0) >= self.total / 2:
+                return None, None, 2
+            gamma *= 0.5 * ((j + 1)/(2 * (j + 1) - 1))
+            levels[j] = np.sqrt(gamma * np.mean(fvals_[0:self.total-j-1] ** 2))
+            emax, emin = np.max(fvals_[0:self.total-j-1]), np.min(fvals_[0:self.total-j-1])
+            if emax * emin < 0.0:
+                dsgns[j] = 1
+
+        for k in range(self.total-3):
+            emax, emin = np.max(levels[k:k+3]), np.min(levels[k:k+3])
+            if emax <= 4 * emin and dsgns[k]:
+                noise = levels[k]
+                return levels[k], levels, 1
+        return None, None, 3
+
+    def estimate(self):
+        for i in range(self.max_iter):
+            noise, levels, inform = self.estimate_given_h()
+            if inform == 1:
+                return noise
+            scale = 100 if inform == 2 else 1 / 100
+            self.h *= scale
+            self.fvals = self.init_fvals()
+        warnings.warn("Cannot estimate a noise level from {} iterations".format(self.max_iter))
+        return noise
+
+def f(x):
+    return x ** 2 + np.random.normal(0, 1)
+
+if __name__ == "__main__":
+    x = 5
+    h = 1
+    ecn = ECNoise(f, x, h)
+    print(ecn.estimate())
+
+"""
+def estimate_noise(nf,fval):
     # Determines the noise of a function from the function values
 
     # The user must provide the function value at nf equally-spaced points.
@@ -14,12 +78,12 @@ def function(nf,fval):
     # Noise will not be detected by this code if the function values differ
     # in the first digit.
 
-    # If noise is not detected, the user should increase or decrease the 
-    # spacing h according to the ouput value of inform.  In most cases, 
+    # If noise is not detected, the user should increase or decrease the
+    # spacing h according to the ouput value of inform.  In most cases,
     # the subroutine detects noise with the initial value of h.
 
     # On exit:
-    #   fnoise is set to an estimate of the function noise; 
+    #   fnoise is set to an estimate of the function noise;
     #      fnoise is set to zero if noise is not detected.
 
     #   level is set to estimates for the noise. The k-th entry is an
@@ -78,13 +142,4 @@ def function(nf,fval):
     #If noise not detected then h is too large
     inform = 3
     return fnoise, level, inform
-
-
-
-
-
-
-
-
-
-
+"""

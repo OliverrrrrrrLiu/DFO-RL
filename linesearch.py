@@ -16,6 +16,9 @@ class LineSearch(object):
 		@param f:  noisy function f to be evaluated
 		@param c1: Armijo coefficient
 		@param c2: Wolfe coefficient
+		@param gamma_1:
+		@param gamma_2:
+		@param max_iter: maximum number of trials to perform line search
 		"""
 		self.f = f
 		self.c1 = c1
@@ -26,32 +29,30 @@ class LineSearch(object):
 		self.mode = mode #TODO migrate
 
 	@staticmethod
-	def is_armijo(orig_pt, fx_new, step, d, relax = False):
-		"""verify if the Armijo condition holds
+	def is_armijo(orig_pt, fx_new, step, d, noise = 0.0):
+		"""verify if the Armijo condition is satisfied
 		@param orig_pt: tuple (fx, grad_fx): starting point at which we examine the Armijo condition
 		@param fx_new:  f(x + step * d): ending point
 		@param step:    step size
 		@param d:       Armijo search direction
 		"""
 		fx_orig, grad_fx_orig = orig_pt
-		if not relax:
-			return fx_new <= fx_orig + self.c1 * step * np.inner(grad_fx_orig, d)
-		else:
-			return False #TODO
+		return fx_new <= fx_orig + self.c1 * step * np.inner(grad_fx_orig, d) + 2 * noise
 
 	@staticmethod
 	def is_wolfe():
-		return False
+		return True
 
 	def search(self, orig_pt, d):
 		ls_counter = 0
 		step = 1
 		xk, f_xk, grad_f_xk = orig_pt
+		# TODO ECNoise noise =
 		while ls_counter < self.max_iter:
 			relax = ls_counter >= 1
 			xh = xk + step * d
 			f_xh = self.f(xh)
-			if LineSearch.is_armijo(orig_pt, f_xh, step, d, relax) and LineSearch.is_wolfe():
+			if LineSearch.is_armijo(orig_pt, f_xh, step, d, (ls_counter >= 1) * noise) and LineSearch.is_wolfe():
 				return (xh, f_xh), step, TODO, True
 			ls_counter += 1
 			step /= 2
