@@ -1,7 +1,13 @@
 import numpy as np
 import warnings
 
+#TODO: incorporate random directions in function evaluations
+
 class ECNoise(object):
+    """Estimate the noise level of function f from function values evaluated at equally spacing points
+    @param h: spacing
+    @param breadth: (number of points-1)/2
+    """
     def __init__(self, f, x, h, breadth = 3, max_iter = 10, fval = None):
         self.f = f
         self.x = x
@@ -12,11 +18,24 @@ class ECNoise(object):
         self.fvals = self.init_fvals()
         self.max_iter = max_iter
 
+    
     def init_fvals(self):
-        return np.array([self.f(self.x - i * self.h) for i in range(self.breadth, 0, -1)] + [self.fval] +
-                        [self.f(self.x + i * self.h) for i in range(1, self.breadth + 1)])
+        #Random direction p
+        dim = len(self.x)
+        vec = np.random.randn(dim)
+        p = vec/np.linalg.norm(vec)
+        h = self.h * p
+        #return np.array([self.f(self.x - i * self.h) for i in range(self.breadth, 0, -1)] + [self.fval] +
+        #                [self.f(self.x + i * self.h) for i in range(1, self.breadth + 1)])
+        return np.array([self.f(self.x - i * h) for i in range(self.breadth, 0, -1)] + [self.fval] +
+                        [self.f(self.x + i * h) for i in range(1, self.breadth + 1)])
 
     def estimate_given_h(self):
+        """
+        inform = 1  Noise has been detected.
+        inform = 2  Noise has not been detected; h is too small.
+        inform = 3  Noise has not been detected; h is too large.
+        """
         fmax, fmin = np.max(self.fvals), np.min(self.fvals)
         if (fmax - fmin) / max(abs(fmax), abs(fmin)) > 0.1:
             return None, None, 3
@@ -55,11 +74,11 @@ class ECNoise(object):
         return noise
 
 def f(x):
-    return x ** 2 + np.random.normal(0, 1)
+    return np.inner(x,x) * (1 + 1e-3*np.random.normal(0, 1))
 
 if __name__ == "__main__":
-    x = 5
-    h = 1
+    x = np.array([1, 1])
+    h = 1e-6
     ecn = ECNoise(f, x, h)
     print(ecn.estimate())
 
