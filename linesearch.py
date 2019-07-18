@@ -1,6 +1,8 @@
 import math
 import numpy as np
 from np.linalg import norm
+from FD import fd_gradient
+from ECNoise import ECNoise
 
 # Current TODO's:
 #			Armijo relaxation,
@@ -40,19 +42,23 @@ class LineSearch(object):
 		return fx_new <= fx_orig + self.c1 * step * np.inner(grad_fx_orig, d) + 2 * noise
 
 	@staticmethod
-	def is_wolfe():
-		return True
+	def is_wolfe(orig_pt, x_new, d, noise = 0.0):
+		fx_orig, grad_fx_orig = orig_pt
+		grad_fx_new = fd_gradient(self.f, x_new, noise)
+		return np.inner(grad_fx_new, d) >= self.c2 * np.inner(grad_fx_orig, d)
 
 	def search(self, orig_pt, d):
 		ls_counter = 0
 		step = 1
 		xk, f_xk, grad_f_xk = orig_pt
+
 		# TODO ECNoise noise =
 		while ls_counter < self.max_iter:
 			relax = ls_counter >= 1
 			xh = xk + step * d
 			f_xh = self.f(xh)
-			if LineSearch.is_armijo(orig_pt, f_xh, step, d, (ls_counter >= 1) * noise) and LineSearch.is_wolfe():
+			if LineSearch.is_armijo(orig_pt, f_xh, step, d, (ls_counter >= 1) * noise) and \
+			   LineSearch.is_wolfe(orig_pt, xh, d, (ls_counter >= 1) * noise):
 				return (xh, f_xh), step, TODO, True
 			ls_counter += 1
 			step /= 2

@@ -72,18 +72,20 @@ def f(x):
     n, d = x.shape
     return inner1d(x, x) + x[:,0] ** 2 + np.random.normal(0, 0.01, n)
 
-def fd_gradient(f, x, eps, mode = "fd", tau_1 = 100, tau_2 = 0.1):
+def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
     dim = len(x)
     if mu is None: return None
     if mode == "fd":
         fx = f(x)
-        h = 8 ** 0.25 * (eps / mu) ** 0.5
+        if h is None:
+            h = 8 ** 0.25 * (eps / mu) ** 0.5
         h_mat = np.zeros((dim, dim))
         h_mat[np.arange(dim), np.arange(dim)] = h
         f_incr, f_decr = f(x + h_mat), fx
     else:
-        h = 3 ** (1/3) * (eps / mu) ** (1/3)
+        if h is None:
+            h = 3 ** (1/3) * (eps / mu) ** (1/3)
         h_mat = np.zeros((dim, dim))
         h_mat[np.arange(dim), np.arange(dim)] = h
         f_incr, f_decr = f(x + h_mat), f(x - h_mat)

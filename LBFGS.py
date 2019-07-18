@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 
 class LBFGS(object):
 	"""L-BFGS to compute search direction d_k = -H_k * grad_k
@@ -6,30 +7,46 @@ class LBFGS(object):
 	@param m: number of vector pairs (s_i, y_i) stored
 	@param s: matrix with rows  s_k = x_k+1 - x_k 
 	@param y: matrix with rows y_k = grad_k+1 - grad_k
-	@param rho: 1/y_kT*x_k rho = np.sum(s*y, axis = 1)
+	@param rho: 1/y_kT*s_k rho = np.sum(s*y, axis = 1)
 	"""
-	def __init__(self, grad_k, m, s, y, rho):
-		self.grad_k = grad_k
+	def __init__(self, m):
 		self.m = m
-		self.s = s
-		self.y = y
-		self.rho = rho
+		self.s = []
+		self.y = []
+		self.rho = []
+		self.iter = 0
 
-	def calculate_direction(self):
-		q = self.grad_k
-		alpha = np.zeros(m)
-		for i in range(self.m):
+	def update_history(self, s_new, y_new):
+		self.s.append(s_new)
+		self.y.append(y_new)
+		self.rho.append(np.inner(s_new, y_new))
+		if len(self.s) <= self.m:
+			pass
+		else:
+			self.s = self.s[1:]
+			self.y = self.y[1:]
+			self.rho = self.rho[1:]
+
+	def calculate_direction(self, grad):
+		if self.iter == 0:
+			self.iter += 1
+			return -grad
+		q = grad
+		len_history = min(len(s_new), self.m)
+		alpha = np.zeros(len_history)
+		for i in range(len_history):
 			alpha[i] = self.rho[i]*np.inner(self.s[i],q)
-			q = q - alpha * self.y[i]
+			q -= alpha[i] * self.y[i]
 		"""	
 		alpha = rho * np.inner(s, grad_k)
 		q = grad_k - np.sum(alpha*y)
 		"""
-		gamma_k = np.inner(self.s[m-1],self.y[m-1])/np.inner(self.y[m-1],self.y[m-1])
+		gamma_k = np.inner(self.s[-1],self.y[-1])/np.inner(self.y[-1],self.y[-1])
 		r = gamma_k * q
 		for i in range(self.m-1,-1,-1):
 			beta = self.rho[i]*np.inner(self.y[i],r)
-			r = r + self.s[i]*(alpha[i] - beta)
+			r += self.s[i]*(alpha[i] - beta)
+		self.iter += 1
 		return -r
 
 if __name__ == "__main__":

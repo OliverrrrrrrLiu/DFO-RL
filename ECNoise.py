@@ -8,7 +8,7 @@ class ECNoise(object):
     @param h: spacing
     @param breadth: (number of points-1)/2
     """
-    def __init__(self, f, x, h, breadth = 3, max_iter = 10, fval = None):
+    def __init__(self, f, x, h = 1e-6, breadth = 3, max_iter = 10, fval = None):
         self.f = f
         self.x = x
         self.breadth = breadth
