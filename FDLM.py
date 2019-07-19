@@ -6,20 +6,19 @@ from linesearch import LineSearch
 from numpy.linalg import norm
 
 class FDLM(object):
-    def __init__(self, ecn_params, zeta, m, c1, c2, gamma_1, gamma_2, max_iter):
+    def __init__(self, f, ecn_params, ls_params, zeta, m):
         """
-        @param f: noisy function f to be evaluated
         @param ecn_params: tuple of ECNoise parameters (h, breadth, max_iter)
+        @param ls_params: tuple of line search parameters (f, c1, c2, gamma_1, gamma_2, max_iter)
         @param m: length of L-BFGS history
         """
         self.zeta = zeta
         self.eval_counter = 0
         self.ls_counter = 0
         self.rec_counter = 0
-        h, breadth, max_iter = ecn_params
-        self.noise_f = ECNoise(h, breadth, max_iter)
+        self.noise_f = ECNoise(f, *ecn_params)
+        self.ls = LineSearch(f, *ls_params)
         self.lbfgs = LBFGS(m)
-        self.ls = LineSearch(f, c1, c2, gamma_1, gamma_2, max_iter)
 
     def run(self, f, x):
         f_val = f(x)
@@ -46,4 +45,3 @@ class FDLM(object):
 
     def is_convergence(self, grad, tol = 1e-8):
         return norm(grad) <= tol or abs(f_MA - f_val) <= tol
-

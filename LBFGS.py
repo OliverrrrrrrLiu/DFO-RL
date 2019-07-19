@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import multi_dot
 from collections import deque
 
 class LBFGS(object):
@@ -27,36 +28,36 @@ class LBFGS(object):
 			self.y = self.y[1:]
 			self.rho = self.rho[1:]
 
-	def calculate_direction(self, grad):
-		if self.iter == 0:
-			self.iter += 1
+	def calculate_direction(self, grad, H, k):
+		self.iter += 1
+		if k == 0:
 			return -grad
+		elif k < self.m:
+			tmp = np.eye(len(grad)) - self.rho[-1] * np.outer(self.s[-1], self.y[-1])
+			H_new = multidot([tmp, H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
+			return -np.matmul(H_new, grad)
 		q = grad
-		len_history = min(len(s_new), self.m)
-		alpha = np.zeros(len_history)
-		for i in range(len_history):
-			alpha[i] = self.rho[i]*np.inner(self.s[i],q)
+		alpha = np.zeros(self.m)
+		for i in range(self.m):
+			alpha[i] = self.rho[i] * np.inner(self.s[i], q)
 			q -= alpha[i] * self.y[i]
-		"""	
-		alpha = rho * np.inner(s, grad_k)
-		q = grad_k - np.sum(alpha*y)
-		"""
-		gamma_k = np.inner(self.s[-1],self.y[-1])/np.inner(self.y[-1],self.y[-1])
+		gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1],self.y[-1])
 		r = gamma_k * q
 		for i in range(self.m-1,-1,-1):
-			beta = self.rho[i]*np.inner(self.y[i],r)
-			r += self.s[i]*(alpha[i] - beta)
+			beta = self.rho[i] * np.inner(self.y[i],r)
+			r += self.s[i] * (alpha[i] - beta)
 		self.iter += 1
 		return -r
 
 if __name__ == "__main__":
-	grad_k = np.array([1,1,1])
+	grad = np.ones(3)
 	m = 3
 	s = np.array([[1,2,3],[2,1,4],[0,2,1]])
 	y = np.array([[0,1,1],[2,1,3],[0,0,3]])
-	rho = np.sum(s*y,axis = 1)
-d_k = LBFGS(grad_k,m,s,y,rho)
-print(d_k.calculate_direction())
+	rho = np.sum(s*y, axis = 1)
+	lbfgs = LBFGS(m)
+	lbfgs.s, lbfgs.y, lbfgs.rho = s, y, rho
+	print(lbfgs.calculate_direction(grad, None, 3))
     
 
 

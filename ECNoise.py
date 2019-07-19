@@ -4,20 +4,21 @@ from numpy.linalg import norm
 import warnings
 
 class ECNoise(object):
-    def __init__(self, h = 1e-6, breadth = 3, max_iter = 10):
+    def __init__(self, f, h = 1e-6, breadth = 3, max_iter = 10):
+        self.f = f
         self.breadth = breadth
         self.total = breadth * 2 + 1
         self.h = h
         self.max_iter = max_iter
 
-    def init_fvals_(self, f, x, direction = None):
+    def init_fvals_(self, x, direction = None):
         if direction is None: direction = np.random.randn(len(x)) 
         direction /= norm(direction)
         h = self.h * direction
-        return np.array([f(x + i * h) for i in range(-self.breadth, self.breadth + 1)])
+        return np.array([self.f(x + i * h) for i in range(-self.breadth, self.breadth + 1)])
 
-    def noise_estimate(self, f, x, direction = None):
-        fvals = self.init_fvals_(f, x, direction)
+    def noise_estimate(self, x, direction = None):
+        fvals = self.init_fvals_(x, direction)
         fmin, fmax = np.min(fvals), np.max(fvals)
         if (fmax-fmin) / max(abs(fmin), abs(fmax)) > 0.1:
             return None, None, 3
@@ -40,9 +41,9 @@ class ECNoise(object):
                 return levels[k], levels, 1
         return None, None, 3
 
-    def estimate(self, f, x, direction = None):
+    def estimate(self, x, direction = None):
         for i in range(self.max_iter):
-            noise, levels, inform = self.noise_estimate(f, x, direction)
+            noise, levels, inform = self.noise_estimate(x, direction)
             if inform == 1:
                 return noise
             scale = 100 if inform == 2 else 1 / 100
@@ -56,5 +57,5 @@ def f(x):
 if __name__ == "__main__":
     x = np.array([1, 1])
     h = 1e-8
-    ecn = ECNoise(h=h, breadth=7, max_iter=100)
-    print(ecn.estimate(f, x))
+    ecn = ECNoise(f, h=h, breadth=7, max_iter=100)
+    print(ecn.estimate(x))
