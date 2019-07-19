@@ -2,7 +2,8 @@ import numpy as np
 from ECNoise import ECNoise
 
 class recovery(object):
-	def __init__(self, gamma_1, gamma_2):
+	def __init__(self, f, gamma_1, gamma_2):
+		self.f = f
 		self.gamma_1 = gamma_1
 		self.gamma_2 = gamma_2
 		self.t_rec = 0
@@ -18,7 +19,7 @@ class recovery(object):
 		@param d_k: search direction
 		@param (x_s,f_s): best point on the stencil
 		"""
-
+		noise = ECNoise(self.f, x_k)
 
 
 
