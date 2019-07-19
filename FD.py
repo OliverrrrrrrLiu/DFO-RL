@@ -82,9 +82,14 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
         fx = f(x)
         if h is None:
             h = 8 ** 0.25 * (eps / mu) ** 0.5
-        h_mat = np.zeros((dim, dim))
-        h_mat[np.arange(dim), np.arange(dim)] = h
-        f_incr, f_decr = f(x + h_mat), fx
+        #h_mat = np.diag(np.ones(dim) * h) TODO vectorize
+        f_incr = []
+        for d in range(dim):
+            tmp = np.zeros(dim)
+            tmp[d] = h
+            f_incr.append(f(x + tmp))
+        f_incr = np.array(f_incr)
+        f_decr = fx
     else:
         if h is None:
             h = 3 ** (1/3) * (eps / mu) ** (1/3)

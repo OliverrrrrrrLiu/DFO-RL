@@ -28,14 +28,15 @@ class LBFGS(object):
 			self.y = self.y[1:]
 			self.rho = self.rho[1:]
 
-	def calculate_direction(self, grad, H, k):
+	def calculate_direction(self, grad, k):
 		self.iter += 1
 		if k == 0:
+			self.H = np.diag(np.ones(len(grad)))
 			return -grad
 		elif k < self.m:
 			tmp = np.eye(len(grad)) - self.rho[-1] * np.outer(self.s[-1], self.y[-1])
-			H_new = multidot([tmp, H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
-			return -np.matmul(H_new, grad)
+			self.H = multi_dot([tmp, self.H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
+			return -np.matmul(self.H, grad)
 		q = grad
 		alpha = np.zeros(self.m)
 		for i in range(self.m):
