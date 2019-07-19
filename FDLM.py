@@ -30,9 +30,11 @@ class FDLM(object):
         noise = self.noise_f.estimate()
         x = self.x0
         grad = fd_gradient(self.f, x, noise)
+        #TODO: separate h
+        #TODO: stencil
         k = 0
         while not self.is_convergence():
-            d = self.lbfgs.calculate_gradient(grad)
+            d = self.lbfgs.calculate_direction(grad)
             new_pt, step, TODO, flag = self.ls.search((x, f_val, grad), d)
             if not flag:
                 new_pt, h, noise, TODO = self.ls.recovery((x, f_val, grad), h, d, stencil_pt)
@@ -45,9 +47,9 @@ class FDLM(object):
                 self.lbfgs.update_history(s, y)
             k += 1
 
-    def curvature_satisfied(self, s, y):
+    def curvature_satisfied(self, s, y, f_val, f_MA):
         return np.inner(s, y) >= self.zeta * norm(s) * norm(y)
 
-    def is_convergence(self):
-        return False
+    def is_convergence(self, grad, tol = 1e-8):
+        return norm(grad) <= tol or abs(f_MA - f_val) <= tol
 

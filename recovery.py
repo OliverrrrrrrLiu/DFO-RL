@@ -1,8 +1,45 @@
 import numpy as np
+from ECNoise import ECNoise
+
+class recovery(object):
+	def __init__(self, gamma_1, gamma_2):
+		self.gamma_1 = gamma_1
+		self.gamma_2 = gamma_2
+		self.t_rec = 0
+
+	def recover(self, x_k, f_k, grad_hk, h, d_k, x_s, f_s):
+		"""
+		@param x_k: current iterate
+		@param f_k: current function value
+		@param grad_hk: current gradient estimate
+		@param h: current finite difference interval
+		@param gamma1: 
+		@param gamma2: finite difference interval acceptance/rejection parameter
+		@param d_k: search direction
+		@param (x_s,f_s): best point on the stencil
+		"""
+
+
+
+
+
 def recovery(x_k, f_k, grad_hk, h, gamma_1, gamma_2, d_k, x_s, f_s):
+	"""
+	@param x_k: current iterate
+	@param f_k: current function value
+	@param grad_hk: current gradient estimate
+	@param h: current finite difference interval
+	@param gamma1: 
+	@param gamma2: finite difference interval acceptance/rejection parameter
+	@param d_k: search direction
+	@param (x_s,f_s): best point on the stencil
+	"""
+
 	t_rec = 0 #functions evaluation counter
 	#TODO: Compute new noise estimate and new h
 	#Update function evaluation counter
+	noise = 
+
 
 	if h_new < gamma_1 * h or h_new > gamma_2*h:
 		h = h_new
