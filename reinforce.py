@@ -15,10 +15,10 @@ class PolicyNetwork(nn.Module):
         self.layers = nn.ModuleList()
         for i in range(len(dim_list)-1):
             self.layers.append(nn.Linear(dim_list[i], dim_list[i+1]))
-            self.param_init(self.layers[-1], dim_list[i], dim_list[i+1])
+            #self.param_init(self.layers[-1], dim_list[i], dim_list[i+1])
             self.layers.append(nn.ReLU())
         self.out = nn.Linear(dim_list[-1], output_dim)
-        self.param_init(self.out, dim_list[-1], output_dim)
+        #self.param_init(self.out, dim_list[-1], output_dim)
         self.sm = nn.Softmax(dim=1)
 
     def forward(self, x):
@@ -79,14 +79,11 @@ class Reinforce(object):
                 reward_stds.append(std)
 
     def calculate_policy_loss(self, log_probs, cum_rewards):
-        T = len(cum_rewards)
         cum_rewards = torch.FloatTensor(cum_rewards)
+        log_probs = torch.stack(log_probs)
         if self.GPU:
             cum_rewards = cum_rewards.cuda()
-        policy_loss = []
-        for p, r in zip(log_probs, cum_rewards):
-            policy_loss.append(p*r)
-        policy_loss = -1.0 * torch.stack(policy_loss).mean()
+        policy_loss = -1.0 * (cum_rewards * log_probs).mean()
         return policy_loss
 
     def generate_episode(self, render = False):
@@ -125,8 +122,8 @@ class Reinforce(object):
         return np.mean(cum_rewards), np.std(cum_rewards)
 
 if __name__ == "__main__":
-    actor = Actor(4, [16, 16, 16], 2, lr=1e-3, weight_decay=0.0)
-    env = gym.make("CartPole-v0")
-    reinforce = Reinforce(actor, env, num_episodes = 30000, down_scale = 100, eval_freq = 200)
+    actor = Actor(8, [16, 16, 16], 4, lr=5e-4, weight_decay=0.0)
+    env = gym.make("LunarLander-v2")
+    reinforce = Reinforce(actor, env, num_episodes=30000, down_scale=100, eval_freq=200, eval_iter=50)
     reinforce.generate_episode()
     reinforce.train()
