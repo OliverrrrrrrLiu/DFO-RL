@@ -4,6 +4,7 @@ from FD import fd_gradient
 from LBFGS import LBFGS
 from linesearch import LineSearch
 from numpy.linalg import norm
+from recovery import Recovery
 
 class FDLM(object):
     def __init__(self, f, ecn_params, ls_params, zeta, m):
@@ -19,6 +20,7 @@ class FDLM(object):
         self.noise_f = ECNoise(f, *ecn_params)
         self.ls = LineSearch(f, *ls_params)
         self.lbfgs = LBFGS(m)
+        self.recovery = Recovery()
 
     def run(self, f, x):
         f_val = f(x)
