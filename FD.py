@@ -2,6 +2,7 @@ import numpy as np
 from numpy.core.umath_tests import inner1d
 
 # TODO: implement second-order finite difference table when mu_2 is not found
+# TODO: fd_gradient outputs h as np.array???
 
 class MaxHessian(object):
     """Estimate the maximum absolute Hessian entry for function f"""
@@ -66,13 +67,13 @@ class MaxHessian(object):
         if self.exit(h_b, dh_b, fx, fx_plus_h_b, fx_minus_h_b) or abs(mu_a - mu_b) <= mu_b / 2:
             return mu_b
         else:
-            return None
+            return 2.0
 
 def f(x):
     if len(x.shape) == 1:
         x = x.reshape(1, -1)
     n, d = x.shape
-    return inner1d(x, x) + x[:,0] ** 2 + np.random.normal(0, 0.01, n)
+    return inner1d(x, x) + np.random.uniform(1e-3,1e-3)
 
 def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
@@ -100,9 +101,13 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     return (f_incr - f_decr) / h, h
 
 if __name__ == "__main__":
-    lst = []
-    for _ in range(1000):
-        tmp = fd_gradient(f, np.array([5, 1]), 0.01)
-        if tmp is not None: lst.append(tmp[0])
-    lst = np.array(lst)
-    print(np.mean(lst, axis=0))
+    print(fd_gradient(f, np.array([1,1]),0.01))
+
+
+# if __name__ == "__main__":
+#     lst = []
+#     for _ in range(1000):
+#         tmp = fd_gradient(f, np.array([5, 1]), 0.01)
+#         if tmp is not None: lst.append(tmp[0])
+#     lst = np.array(lst)
+#     print(np.mean(lst, axis=0))

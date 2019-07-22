@@ -18,6 +18,7 @@ class ECNoise(object):
         return np.array([self.f(x + i * h) for i in range(-self.breadth, self.breadth + 1)])
 
     def noise_estimate(self, x, direction = None):
+       #print("x", x)
         fvals = self.init_fvals_(x, direction)
         fmin, fmax = np.min(fvals), np.max(fvals)
         if (fmax-fmin) / max(abs(fmin), abs(fmax)) > 0.1:
@@ -52,10 +53,10 @@ class ECNoise(object):
         return noise
 
 def f(x):
-    return np.inner(x,x) * (1 + np.random.normal(0, 1e-4))
+    return np.inner(x,x) + np.random.uniform(-1e-3,1e-3)
 
 if __name__ == "__main__":
-    x = np.array([1, 1])
+    x = np.array([-0.01529986, -0.00816587]) * 6
     h = 1e-8
     ecn = ECNoise(f, h=h, breadth=7, max_iter=100)
-    print(ecn.estimate(x))
+    print(ecn.estimate(x, direction=[-0.70335354 -0.71084021]))

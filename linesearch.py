@@ -15,8 +15,6 @@ class LineSearch(object):
 		@param f:  noisy function f to be evaluated
 		@param c1: Armijo coefficient
 		@param c2: Wolfe coefficient
-		@param gamma_1:
-		@param gamma_2:
 		@param max_iter: maximum number of trials to perform line search
 		"""
 		self.f = f
@@ -28,7 +26,7 @@ class LineSearch(object):
 	def is_armijo(self, orig_pt, fx_new, step, d, noise = 0.0):
 		"""verify if the Armijo condition is satisfied
 		@param orig_pt: tuple (fx, grad_fx): starting point at which we examine the Armijo condition
-		@param fx_new:  f(x + step * d): ending point
+		@param fx_new:  f(x + step * d): trial point
 		@param step:    step size
 		@param d:       Armijo search direction
 		"""
@@ -45,12 +43,18 @@ class LineSearch(object):
 		step = 1
 		xk, f_xk, grad_f_xk = orig_pt
 		while ls_counter < self.max_iter:
+			#print(ls_counter)
 			relax = ls_counter >= 1
 			xh = xk + step * d
 			f_xh = self.f(xh)
-			if self.is_armijo(orig_pt, f_xh, step, d, (ls_counter >= 1) * noise) and \
-			   self.is_wolfe(orig_pt, xh, d, (ls_counter >= 1) * noise):
+			if ls_counter != self.max_iter - 1:
+				condition_satisfied = self.is_armijo(orig_pt, f_xh, step, d, relax * noise) and \
+									  self.is_wolfe(orig_pt, xh, d, noise)
+			else:
+				condition_satisfied = self.is_armijo(orig_pt, f_xh, step, d, relax * noise)
+			if condition_satisfied:
 				return (xh, f_xh), step, True
 			ls_counter += 1
 			step /= 2
+		#print("juju")
 		return (xk, f_xk, grad_f_xk), step, False

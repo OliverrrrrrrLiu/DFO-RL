@@ -30,11 +30,12 @@ class Recovery(object):
 		x_k, f_k, grad_hk = orig_pt
 		x_s, f_s = stencil_pt
 		noise = self.noise_f.estimate(x_k, direction = d_k) #reestimate noise
+		print("noise", noise, d_k)
 		grad, h_new = fd_gradient(self.f, x_k, noise)
 		if h_new < self.gamma_1 * h or h_new > self.gamma_2 * h:
 			x, fval, h = x_k, f_k, h_new
 		else:
-			step = h/norm(d_k)
+			step = h / norm(d_k)
 			x_h = x_k + step * d_k
 			f_h = self.f(x_h)
 			self.t_rec += 1
