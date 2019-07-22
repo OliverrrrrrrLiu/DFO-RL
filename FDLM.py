@@ -42,15 +42,13 @@ class FDLM(object):
         grad, h = fd_gradient(f, x, noise)
         stencil_pt, stencil_val = self.get_stencil_pt(x, h)
         k, fval_history = 0, [f_val]
-        while k == 0 or not self.is_convergence(f_val, fval_history, grad, 5, 2e-3):
+        while k == 0 or not self.is_convergence(f_val, fval_history, grad, 5, 1e-6):
         #while not self.is_convergence(grad, f_val, 1e-5):
-            print("k", k)
+            #print("k", k)
             d = self.lbfgs.calculate_direction(grad, k)
             new_pt, step, flag = self.ls.search((x, f_val, grad), d, noise)
             if not flag:
                 new_pt, h, noise = self.rec.recover((x, f_val, grad), h, d, stencil_pt)
-            else:
-                h = None
             x_new, f_val_new = new_pt
             grad_new, _ = fd_gradient(f, x_new, noise, h)
             stencil_pt, stencil_val = self.get_stencil_pt(x_new, h)

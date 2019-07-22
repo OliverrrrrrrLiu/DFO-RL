@@ -98,6 +98,7 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
         h_mat[np.arange(dim), np.arange(dim)] = h
         f_incr, f_decr = f(x + h_mat), f(x - h_mat)
         h *= 2
+    #print("mu, h", mu, h)
     return (f_incr - f_decr) / h, h
 
 if __name__ == "__main__":

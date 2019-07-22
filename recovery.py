@@ -30,8 +30,9 @@ class Recovery(object):
 		x_k, f_k, grad_hk = orig_pt
 		x_s, f_s = stencil_pt
 		noise = self.noise_f.estimate(x_k, direction = d_k) #reestimate noise
-		print("noise", noise, d_k)
+		#print("noise", noise, d_k)
 		grad, h_new = fd_gradient(self.f, x_k, noise)
+		#print("h_new:", h_new, h)
 		if h_new < self.gamma_1 * h or h_new > self.gamma_2 * h:
 			x, fval, h = x_k, f_k, h_new
 		else:
@@ -39,7 +40,7 @@ class Recovery(object):
 			x_h = x_k + step * d_k
 			f_h = self.f(x_h)
 			self.t_rec += 1
-			if self.ls.is_armijo((f_k, grad_hk), f_h, step, d_k):
+			if self.ls.is_armijo((x_k, f_k, grad_hk), f_h, step, d_k):
 				x, fval = x_h, f_h
 			elif f_h <= f_s and f_h <= f_k:
 				x, fval = x_h, f_h
@@ -47,6 +48,6 @@ class Recovery(object):
 				x, fval = x_s, f_s
 			else:
 				x, fval = x_k, f_k
-				noise_new = self.noise.estimate(x_k)
-				grad, h = fd_gradient(f, x_k, noise_new)
-		return (x, fval), h, noise_new
+				noise = self.noise_f.estimate(x_k)
+				grad, h = fd_gradient(self.f, x_k, noise)
+		return (x, fval), h, noise
