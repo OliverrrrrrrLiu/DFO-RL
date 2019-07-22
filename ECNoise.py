@@ -69,26 +69,40 @@ class ECNoise(object):
             if j == 0 and np.sum(fvals_[0:self.total-1] == 0) >= self.total / 2: #h is too small only when half the function values are equal
                 return 0, None, 2
             gamma *= 0.5 * ((j+1) / (2 * (j+1)-1))
-            levels[j] = np.sqrt(gamma * np.mean(fvals_[:self.total-j-1]**2))
-            emin, emax = np.min(fvals_[:self.total-j-1]), np.max(fvals_[:self.total-j-1])
+            levels[j] = np.sqrt(gamma * np.mean(fvals_[:self.total-j-1]**2)) # compute the estimates for the noise level
+            emin, emax = np.min(fvals_[:self.total-j-1]), np.max(fvals_[:self.total-j-1]) #Determine differences in sign
             if emin * emax < 0.0: dsgns[j] = 1 
-        for k in range(self.total-3):
+        for k in range(self.total-3): #Determine the noise level
             emin, emax = np.min(levels[k:k+3]), np.max(levels[k:k+3])
             if emax <= 4 * emin and dsgns[k]:
                 noise = levels[k]
                 return levels[k], levels, 1
-        return 0, None, 3
+        return 0, None, 3 # If noise not detected, then h is too large
 
     def estimate(self, x, direction = None):
+        """
+        Estimate the noise level of a noisy function in max_iter iterations
+
+        @param x: the point at which noise estimation is performed
+        @param direction: the direction at which noise estimation is performed.
+                         If the argument direction isn't passed in, the default direction None is used and a random direction is sampled from uniform distribution
+        
+        @return noise: the noise level of function
+        @warning: if noise is not detected after max_iter runs a warning will pop out and noise is returned as 0
+        """
         for i in range(self.max_iter):
-            noise, levels, inform = self.noise_estimate(x, direction)
-            if inform == 1:
+            noise, levels, inform = self.noise_estimate(x, direction) 
+            if inform == 1: #if noise is detected
                 return noise
-            scale = 100 if inform == 2 else 1 / 100
+            scale = 100 if inform == 2 else 1 / 100 #if noise is not detected, modify h according to inform 
             self.h *= scale
         warnings.warn("Cannot estimate a noise level from {} iterations".format(self.max_iter))
         return noise
 
+
+"""
+Test case
+"""
 def f(x):
     return np.inner(x,x) + np.random.uniform(-1e-3,1e-3)
 

@@ -5,7 +5,6 @@ from FD import fd_gradient
 from ECNoise import ECNoise
 
 # Current TODO's:
-#			integration of ECNoise and gradient estimate
 #			number of function evaluations
 #			modularity
 
@@ -24,37 +23,45 @@ class LineSearch(object):
 		self.mode = mode # TODO
 
 	def is_armijo(self, orig_pt, fx_new, step, d, noise = 0.0):
-		"""verify if the Armijo condition is satisfied
+		"""verify if the (relaxed) Armijo condition is satisfied 
 		@param orig_pt: tuple (fx, grad_fx): starting point at which we examine the Armijo condition
-		@param fx_new:  f(x + step * d): trial point
+		@param fx_new:  f(x + step * d): trial point function value
 		@param step:    step size
-		@param d:       Armijo search direction
+		@param d:       search direction
 		"""
-		x, fx_orig, grad_fx_orig = orig_pt
-		return fx_new <= fx_orig + self.c1 * step * np.inner(grad_fx_orig, d) + 2 * noise
+		x, fx_orig, grad_fx_orig = orig_pt #extract current point information
+		return fx_new <= fx_orig + self.c1 * step * np.inner(grad_fx_orig, d) + 2 * noise #relaxed armijo-condition
 
 	def is_wolfe(self, orig_pt, x_new, d, noise = 0.0):
-		x, fx_orig, grad_fx_orig = orig_pt
-		grad_fx_new, _ = fd_gradient(self.f, x_new, noise)
+		"""
+		Verify if the wolfe condition is satisfied
+		@param orig_pt: tuple (fx, grad_fx): starting point at which we examine the Wolfe condition
+		@param x_new: trial point
+		@param d: search direction
+		"""
+		x, fx_orig, grad_fx_orig = orig_pt #extract current point information
+		grad_fx_new, _ = fd_gradient(self.f, x_new, noise) #evaluate gradient at trial point
 		return np.inner(grad_fx_new, d) >= self.c2 * np.inner(grad_fx_orig, d)
 
 	def search(self, orig_pt, d, noise = 0.0):
-		ls_counter = 0
-		step = 1
-		xk, f_xk, grad_f_xk = orig_pt
-		while ls_counter < self.max_iter:
+		"""
+		Search for stepsize that satisfies the armijo-wolfe conditions
+		"""
+		ls_counter = 0 #initialize iteration counter
+		step = 1 #initialize stepsize
+		xk, f_xk, grad_f_xk = orig_pt #extract current point information
+		while ls_counter < self.max_iter: #if max number of iterations has not been exceeded
 			#print(ls_counter)
-			relax = ls_counter >= 1
-			xh = xk + step * d
-			f_xh = self.f(xh)
-			if ls_counter != self.max_iter - 1:
+			relax = ls_counter >= 1 #armijo condition is relaxed if initial stepsize does not satisfy the armijo-wolfe conditions
+			xh = xk + step * d #trial point
+			f_xh = self.f(xh) #trial point function value
+			if ls_counter != self.max_iter - 1: #if not at max number of iterations, check both armijo and wolfe condition
 				condition_satisfied = self.is_armijo(orig_pt, f_xh, step, d, relax * noise) and \
 									  self.is_wolfe(orig_pt, xh, d, noise)
-			else:
+			else: #only check the relaxed armijo wolfe condition
 				condition_satisfied = self.is_armijo(orig_pt, f_xh, step, d, relax * noise)
-			if condition_satisfied:
+			if condition_satisfied: #if a stepsize is found, return the corresponding trial point, value and stepsize
 				return (xh, f_xh), step, True
-			ls_counter += 1
-			step /= 2
-		#print("juju")
-		return (xk, f_xk, grad_f_xk), step, False
+			ls_counter += 1 #increase counter number
+			step /= 2 #half stepsize
+		return (xk, f_xk, grad_f_xk), step, False #linesearch failue: no stepsize satisfied the A-W conditions
