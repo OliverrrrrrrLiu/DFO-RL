@@ -28,8 +28,9 @@ class LBFGS(object):
 			self.y = self.y[1:]
 			self.rho = self.rho[1:]
 
-	def calculate_direction(self, grad, k):
+	def calculate_direction(self, grad):
 		self.iter += 1
+		k = len(self.rho)
 		if k == 0:
 			self.H = np.diag(np.ones(len(grad)))
 			return -grad

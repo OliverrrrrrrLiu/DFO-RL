@@ -45,7 +45,7 @@ class FDLM(object):
         while k == 0 or not self.is_convergence(f_val, fval_history, grad, 5, 1e-6):
         #while not self.is_convergence(grad, f_val, 1e-5):
             #print("k", k)
-            d = self.lbfgs.calculate_direction(grad, k)
+            d = self.lbfgs.calculate_direction(grad)
             new_pt, step, flag = self.ls.search((x, f_val, grad), d, noise)
             if not flag:
                 new_pt, h, noise = self.rec.recover((x, f_val, grad), h, d, stencil_pt)
