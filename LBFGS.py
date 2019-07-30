@@ -57,8 +57,9 @@ class LBFGS(object):
 		for i in range(k-1,-1,-1):
 			alpha[i] = self.rho[i] * np.inner(self.s[i],q)
 			q -= alpha[i] * self.y[i]
-		gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1], self.y[-1])
-		r = gamma_k * q
+		#gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1], self.y[-1])
+		#r = gamma_k * q
+		r = q
 		for i in range(k):
 			beta = self.rho[i] * np.inner(self.y[i], r)
 			r += self.s[i] * (alpha[i] - beta)

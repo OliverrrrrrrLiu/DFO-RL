@@ -61,11 +61,12 @@ class FDLM(object):
         grad, h = fd_gradient(f, x, noise) #compute finite difference interval and the corresponding finite gradient estimate
         stencil_pt, stencil_val = self.get_stencil_pt(x, h) #calculate the best stencil points and its function value
         k, fval_history = 0, [f_val] #set iteration counter and function value history
-        while k < 150: #not self.is_convergence(f_val, fval_history, grad, 5, 1e-6): #while convergence test is not satisfied
+        while k < 100: #not self.is_convergence(f_val, fval_history, grad, 5, 1e-6): #while convergence test is not satisfied
         #while not self.is_convergence(grad, f_val, 1e-5):
             #print("k", k)
             d = self.lbfgs.calculate_direction(grad) #calculate LBFGS direction
             new_pt, step, flag = self.ls.search((x, f_val, grad), d, noise) #conduct linesearch to find the next iterate
+            print("step",step)
             if not flag: #if linesearch failed 
                 new_pt, h, noise = self.rec.recover((x, f_val, grad), h, d, (stencil_pt, stencil_val)) #call recovery mechanism
             x_new, f_val_new = new_pt 

@@ -70,9 +70,9 @@ class LineSearch(object):
 
 	def search(self, orig_pt, d, noise = 0.0):
 		l = 0 #lower bound
-		u = np.inf
-		alpha = 1
-		ls_counter = 0
+		u = np.inf #upper boundí
+		alpha = 1 #stepsize 
+		ls_counter = 0 #line search counter
 		xk, f_xk, grad_xk = orig_pt
 		while ls_counter < self.max_iter:
 			relax = ls_counter >= 1
@@ -94,5 +94,6 @@ class LineSearch(object):
 			else:
 				if armijo_satisfied:
 					return(x_trial, f_trial), alpha, True
+			ls_counter+= 1
 		return (x_trial, f_trial), alpha, False
 
