@@ -4,6 +4,7 @@ from numpy.linalg import norm
 
 # TODO: implement second-order finite difference table when mu_2 is not found
 # TODO: fd_gradient outputs h as np.array???
+# TODO: estimate maxHessian only once
 
 class MaxHessian(object):
     """Estimate the maximum absolute Hessian entry for function f"""
@@ -100,8 +101,21 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
 
     @return: finite difference gradient, finite difference interval 
     """
-    mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
     dim = len(x)
+    if eps <= 1e-12: #If no noise is observed
+        h = np.sqrt(np.finfo(float).eps)
+        fx = f(x)
+        f_incr = []
+        #calculate d-th component of the forward difference approximation of the gradient of f at x
+        for d in range(dim): 
+            tmp = np.zeros(dim)
+            tmp[d] = h
+            f_incr.append(f(x + tmp))
+        f_incr = np.array(f_incr)
+        f_decr = fx
+        return (f_incr - f_decr) / h, h
+
+    mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
     if mu is None: return None #if hessian estimate was not found
     if mode == "fd": #forward difference mode
         fx = f(x) #evaluate f(x)
@@ -131,8 +145,12 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
 """
 test
 """
+def f(x):
+    return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2 
+
+
 if __name__ == "__main__":
-    print(fd_gradient(f, np.array([1,1]),0.01))
+    print(fd_gradient(f, np.array([2,2]),0))
 
 
 # if __name__ == "__main__":

@@ -61,13 +61,13 @@ class FDLM(object):
         grad, h = fd_gradient(f, x, noise) #compute finite difference interval and the corresponding finite gradient estimate
         stencil_pt, stencil_val = self.get_stencil_pt(x, h) #calculate the best stencil points and its function value
         k, fval_history = 0, [f_val] #set iteration counter and function value history
-        while k == 0 or not self.is_convergence(f_val, fval_history, grad, 5, 1e-6): #while convergence test is not satisfied
+        while k < 150: #not self.is_convergence(f_val, fval_history, grad, 5, 1e-6): #while convergence test is not satisfied
         #while not self.is_convergence(grad, f_val, 1e-5):
             #print("k", k)
             d = self.lbfgs.calculate_direction(grad) #calculate LBFGS direction
             new_pt, step, flag = self.ls.search((x, f_val, grad), d, noise) #conduct linesearch to find the next iterate
             if not flag: #if linesearch failed 
-                new_pt, h, noise = self.rec.recover((x, f_val, grad), h, d, stencil_pt) #call recovery mechanism
+                new_pt, h, noise = self.rec.recover((x, f_val, grad), h, d, (stencil_pt, stencil_val)) #call recovery mechanism
             x_new, f_val_new = new_pt 
             grad_new, _ = fd_gradient(f, x_new, noise, h) #calculate the finite-difference gradient estimator for the next iterate
             stencil_pt, stencil_val = self.get_stencil_pt(x_new, h) #calculate the new best stencil point
@@ -76,7 +76,7 @@ class FDLM(object):
                 self.lbfgs.update_history(s, y) #store new (s,y) pair
             x, f_val, grad = x_new, f_val_new, grad_new #update iterates
             fval_history.append(f_val) #append new function evaluations 
-            print("k: {}, x: {}, fval: {}, grad: {}".format(k, x, f_val, grad)) 
+            print("Iter: {}, x: {}, fval: {}, grad: {}".format(k, x, f_val, grad)) 
             k += 1 #increase iteration counter
 
     def curvature_satisfied(self, s, y):
@@ -106,19 +106,25 @@ class FDLM(object):
             TRUE: the convergence test is satisfied
             FALSE: the convergence test is not satisfied
         """
+        if len(fval_history) <= 1:
+            return np.max(np.abs(grad)) <= tol
         if len(fval_history) > history_len: #if more than history_len function values have been stored
             fval_history = fval_history[1:] #move the oldest one
         fval_ma = np.mean(fval_history) #calculate the moving average of length history_len
         #check moving average condition and gradient max norm condition; if either is met, the termination tolerance is met
-        return abs(f_val - fval_ma) <= tol * max(1, abs(fval_ma)) or np.max(np.abs(grad)) <= tol 
+        return np.max(np.abs(grad)) <= tol #or abs(f_val - fval_ma) <= tol * max(1, abs(fval_ma))
 
 """
 test problem
-"""
+
 def f(x):
-    return np.inner(x,x) + x[0] + np.random.uniform(-1e-3,1e-3)
+    return np.inner(x,x) + x[0] + 1e-2*np.random.rand()#np.random.uniform(-1e-3,1e-3)
+"""
+
+def f(x):
+    return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2 
 
 if __name__ == "__main__":
-    fdlm = FDLM(f, (1e-8, 7, 100), (1e-2, 0.9, 10), (0.9, 1.1), 0.5, 10)
-    fdlm.run(np.array([1, 1]))
+    fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.5, 20), (0.9, 1.1), 0.5, 10)
+    fdlm.run(np.array([2, 2]))
 

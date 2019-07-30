@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.linalg import multi_dot
 from collections import deque
+from numpy.linalg import norm
 
 class LBFGS(object):
 	"""L-BFGS to compute search direction d_k = -H_k * grad_k
@@ -27,7 +28,7 @@ class LBFGS(object):
 		"""
 		self.s.append(s_new)
 		self.y.append(y_new)
-		self.rho.append(np.inner(s_new, y_new))
+		self.rho.append(1/np.inner(s_new, y_new))
 		if len(self.s) <= self.m: #if less then 
 			pass
 		else: #the oldest (s,y,rho) is repalced by the newest (s,y,rho) pair
@@ -45,26 +46,39 @@ class LBFGS(object):
 		"""
 		self.iter += 1 #initialize iteration counter
 		k = len(self.rho) #check number of (s,y) pairs stored
-		if k == 0: # if no (s,y) pair stored
-			self.H = np.diag(np.ones(len(grad))) # use gradient descent direction
+		if k == 0: # if no (s,y) pair stored use gradient descent direction
 			return -grad
-		elif k < self.m: #if less than m pairs of (s,y) stored, apply bfgs direction
-			tmp = np.eye(len(grad)) - self.rho[-1] * np.outer(self.s[-1], self.y[-1])
-			self.H = multi_dot([tmp, self.H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
-			return -np.matmul(self.H, grad)
-		#LBFGS two-loop recursion: recusively compute direction = -(H*grad)
-		q = grad #create copy of current gradient
-		alpha = np.zeros(self.m) 
-		for i in range(self.m):
-			alpha[i] = self.rho[i] * np.inner(self.s[i], q)
+		# elif k < self.m: #if less than m pairs of (s,y) stored, apply bfgs direction
+		# 	tmp = np.eye(len(grad)) - self.rho[-1] * np.outer(self.s[-1], self.y[-1])
+		# 	self.H = multi_dot([tmp, self.H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
+		# 	return -np.matmul(self.H, grad)
+		q = grad
+		alpha = np.zeros(k)
+		for i in range(k-1,-1,-1):
+			alpha[i] = self.rho[i] * np.inner(self.s[i],q)
 			q -= alpha[i] * self.y[i]
-		gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1],self.y[-1])
+		gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1], self.y[-1])
 		r = gamma_k * q
-		for i in range(self.m-1,-1,-1):
-			beta = self.rho[i] * np.inner(self.y[i],r)
+		for i in range(k):
+			beta = self.rho[i] * np.inner(self.y[i], r)
 			r += self.s[i] * (alpha[i] - beta)
-		self.iter += 1 #increase iteration counter
+		self.iter += 1
 		return -r
+
+
+		# #LBFGS two-loop recursion: recusively compute direction = -(H*grad)
+		# q = grad #create copy of current gradient
+		# alpha = np.zeros(self.m) 
+		# for i in range(self.m):
+		# 	alpha[i] = self.rho[i] * np.inner(self.s[i], q)
+		# 	q -= alpha[i] * self.y[i]
+		# gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1],self.y[-1])
+		# r = gamma_k * q
+		# for i in range(self.m-1,-1,-1):
+		# 	beta = self.rho[i] * np.inner(self.y[i],r)
+		# 	r += self.s[i] * (alpha[i] - beta)
+		# self.iter += 1 #increase iteration counter
+		# return -r
 
 """
 test problem 
@@ -78,7 +92,8 @@ if __name__ == "__main__":
 	rho = np.sum(s*y, axis = 1)
 	lbfgs = LBFGS(m)
 	lbfgs.s, lbfgs.y, lbfgs.rho = s, y, rho
-	print(lbfgs.calculate_direction(grad, None, 3))
+	print(s,y,rho)
+	print(lbfgs.calculate_direction(grad))
     
 
 

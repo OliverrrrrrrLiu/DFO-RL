@@ -33,6 +33,7 @@ class Recovery(object):
 
 		@return (x, fval), h, noise: next iterate, new finite difference interval, new noise estimate
 		"""
+		print("RECOVER")
 		x_k, f_k, grad_hk = orig_pt #extract current iterate information
 		x_s, f_s = stencil_pt #extract current stencil point information
 		noise = self.noise_f.estimate(x_k, direction = d_k) #reestimate noise along the current search direction

@@ -104,10 +104,30 @@ class ECNoise(object):
 Test case
 """
 def f(x):
-    return np.inner(x,x) + np.random.uniform(-1e-3,1e-3)
+    return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2 
 
 if __name__ == "__main__":
-    x = np.array([-0.01529986, -0.00816587]) * 6
+    x = np.array([2,2])
+    h = 1e-8
+    ecn = ECNoise(f, h = h, breadth = 7, max_iter = 100)
+    print(ecn.estimate(x))
+
+# def f(x):
+#     return np.inner(x,x) + np.random.uniform(-1e-3,1e-3)
+
+# if __name__ == "__main__":
+#     x = np.array([-0.01529986, -0.00816587]) 
+#     h = 1e-8
+#     ecn = ECNoise(f, h=h, breadth=7, max_iter=100)
+#     print(ecn.estimate(x))
+
+"""
+def f(x):
+    return np.inner(x,x) + x[0] + np.random.uniform(-1e-3,1e-3)
+
+if __name__ == "__main__":
+    x = np.array([-0.5, 0.0]) 
     h = 1e-8
     ecn = ECNoise(f, h=h, breadth=7, max_iter=100)
-    print(ecn.estimate(x, direction=[-0.70335354 -0.71084021]))
+    print(ecn.estimate(x))
+"""
