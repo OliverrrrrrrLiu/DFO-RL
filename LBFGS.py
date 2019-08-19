@@ -17,6 +17,7 @@ class LBFGS(object):
 		self.y = []
 		self.rho = []
 		self.iter = 0
+		self.H = [] 
 
 	def update_history(self, s_new, y_new):
 		"""
@@ -36,7 +37,7 @@ class LBFGS(object):
 			self.y = self.y[1:]
 			self.rho = self.rho[1:]
 
-	def calculate_direction(self, grad):
+	def calculate_direction(self, grad, mode = "bfgs"):
 		"""
 		calculate the LBFGS direction - H * grad
 
@@ -47,24 +48,33 @@ class LBFGS(object):
 		self.iter += 1 #initialize iteration counter
 		k = len(self.rho) #check number of (s,y) pairs stored
 		if k == 0: # if no (s,y) pair stored use gradient descent direction
+			self.H = np.eye(len(grad))
 			return -grad
+		if mode == "bfgs":
+			V_k = np.eye(len(grad)) - self.rho[-1] * np.outer(self.y[-1], self.s[-1])
+			self.H = multi_dot([np.transpose(V_k), self.H, V_k]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
+			return -np.matmul(self.H, grad)
+		# tmp = np.eye(len(grad)) - self.rho[-1] * np.outer(self.s[-1], self.y[-1])
+		# self.H = multi_dot([tmp, self.H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
+		# return -np.matmul(self.H, grad)
 		# elif k < self.m: #if less than m pairs of (s,y) stored, apply bfgs direction
 		# 	tmp = np.eye(len(grad)) - self.rho[-1] * np.outer(self.s[-1], self.y[-1])
 		# 	self.H = multi_dot([tmp, self.H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
 		# 	return -np.matmul(self.H, grad)
-		q = grad
-		alpha = np.zeros(k)
-		for i in range(k-1,-1,-1):
-			alpha[i] = self.rho[i] * np.inner(self.s[i],q)
-			q -= alpha[i] * self.y[i]
-		#gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1], self.y[-1])
-		#r = gamma_k * q
-		r = q
-		for i in range(k):
-			beta = self.rho[i] * np.inner(self.y[i], r)
-			r += self.s[i] * (alpha[i] - beta)
-		self.iter += 1
-		return -r
+		else:
+			q = grad.copy() #Will change this vec
+			alpha = np.zeros(k)
+			for i in range(k-1,-1,-1):
+				alpha[i] = self.rho[i] * np.inner(self.s[i],q)
+				q -= alpha[i] * self.y[i]
+			#gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1], self.y[-1])
+			#r = gamma_k * q
+			r = q.copy()
+			for i in range(k):
+				beta = self.rho[i] * np.inner(self.y[i], r)
+				r += self.s[i] * (alpha[i] - beta)
+			self.iter += 1
+			return -r
 
 
 		# #LBFGS two-loop recursion: recusively compute direction = -(H*grad)

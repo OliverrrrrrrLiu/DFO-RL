@@ -9,7 +9,7 @@ from ECNoise import ECNoise
 #			modularity
 
 class LineSearch(object):
-	def __init__(self, f, c1, c2, max_iter, mode = "fc"):
+	def __init__(self, f, c1, c2, max_iter):
 		"""
 		@param f:  noisy function f to be evaluated
 		@param c1: Armijo coefficient
@@ -20,7 +20,6 @@ class LineSearch(object):
 		self.c1 = c1
 		self.c2 = c2
 		self.max_iter = max_iter
-		self.mode = mode # TODO
 
 	def is_armijo(self, orig_pt, fx_new, step, d, noise = 0.0):
 		"""verify if the (relaxed) Armijo condition is satisfied 

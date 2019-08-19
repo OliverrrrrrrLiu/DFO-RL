@@ -3,7 +3,6 @@ from numpy.core.umath_tests import inner1d
 from numpy.linalg import norm
 
 # TODO: implement second-order finite difference table when mu_2 is not found
-# TODO: fd_gradient outputs h as np.array???
 # TODO: estimate maxHessian only once
 
 class MaxHessian(object):
@@ -88,7 +87,7 @@ def f(x):
     n, d = x.shape
     return inner1d(x, x) + np.random.uniform(1e-3,1e-3)
 """
-def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
+def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
     """
     estimate the finite difference interval and finite difference gradient given noise 
     @param f: function f
@@ -103,7 +102,8 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     """
     dim = len(x)
     if eps <= 1e-12: #If no noise is observed
-        h = np.sqrt(np.finfo(float).eps)
+        h = np.sqrt(np.finfo(float).eps) * max(max(np.abs(x)),1) #TODO: max(x)?
+        #return np.array([200*(x[1] - x[0]**2)*(-2*x[0]) + 2*(x[0]-1), 200*(x[1] - x[0]**2)]),h
         fx = f(x)
         f_incr = []
         #calculate d-th component of the forward difference approximation of the gradient of f at x
@@ -112,7 +112,15 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
             tmp[d] = h
             f_incr.append(f(x + tmp))
         f_incr = np.array(f_incr)
-        f_decr = fx
+        if mode == "fd":
+            f_decr = fx
+        else:
+            #central difference
+            f_decr = []#fx
+            for d in range(dim):
+                tmp = np.zeros(dim)
+                tmp[d]=h
+                f_decr.append(f(x - tmp))
         return (f_incr - f_decr) / h, h
 
     mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
