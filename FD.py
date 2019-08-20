@@ -87,7 +87,7 @@ def f(x):
     n, d = x.shape
     return inner1d(x, x) + np.random.uniform(1e-3,1e-3)
 """
-def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
+def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
     """
     estimate the finite difference interval and finite difference gradient given noise 
     @param f: function f
@@ -122,6 +122,7 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
                 tmp[d]=h
                 f_decr.append(f(x - tmp))
         return (f_incr - f_decr) / h, h
+
     mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
     if mu is None: return None #if hessian estimate was not found
     """
@@ -143,30 +144,30 @@ def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     f_incr = np.array(f_incr)
     return (f_incr - f_decr) / h, h
     """
-
+    fx = f(x) #evaluate f(x)
+    if h is None: #if finite difference interval not given
+        h = 8 ** 0.25 * (eps / mu) ** 0.5
+    #h_mat = np.diag(np.ones(dim) * h) TODO vectorize
+    f_incr = []
+    #calculate d-th component of the forward difference approximation of the gradient of f at x
+    for d in range(dim): 
+        tmp = np.zeros(dim)
+        tmp[d] = h
+        f_incr.append(f(x + tmp))
+    f_incr = np.array(f_incr)
     
     if mode == "fd": #forward difference mode
-        fx = f(x) #evaluate f(x)
-        if h is None: #if finite difference interval not given
-            h = 8 ** 0.25 * (eps / mu) ** 0.5
-        #h_mat = np.diag(np.ones(dim) * h) TODO vectorize
-        f_incr = []
-        #calculate d-th component of the forward difference approximation of the gradient of f at x
-        for d in range(dim): 
-            tmp = np.zeros(dim)
-            tmp[d] = h
-            f_incr.append(f(x + tmp))
-        f_incr = np.array(f_incr)
         f_decr = fx
     else:
-
+        f_decr = []
         #calculate d-th component of the central difference approximation of the gradient of f at x
         if h is None:
             h = 3 ** (1/3) * (eps / mu) ** (1/3)
-        h_mat = np.zeros((dim, dim))
-        h_mat[np.arange(dim), np.arange(dim)] = h
-        f_incr, f_decr = f(x + h_mat), f(x - h_mat)
-        h *= 2
+        for d in range(dim):
+            tmp = np.zeros(dim)
+            tmp[d] = h
+            f_decr.append(f(x - tmp))
+        f_decr = np.array(f_decr)
     #print("mu, h", mu, h)
     return (f_incr - f_decr) / h, h
     
