@@ -59,7 +59,9 @@ class FDLM(object):
         """
         f_val = self.f(x) #evaluate the function value at initial iterate
         noise = self.noise_f.estimate(x) #estimate noise level at initial iterate
+        print("juju", x)
         grad, h = fd_gradient(f, x, noise) #compute finite difference interval and the corresponding finite gradient estimate
+        print("grad",grad)
         norm_grad_k = np.max(np.abs(grad))
         stencil_pt, stencil_val = self.get_stencil_pt(x, h) #calculate the best stencil points and its function value
         k, fval_history = 0, [f_val] #set iteration counter and function value history
@@ -158,7 +160,8 @@ def f(x):
 """
 
 def f(x):
-    return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2 
+    #return np.inner(x,x) + x[0] + 1e-2*np.random.rand()#np.random.uniform(-1e-3,1e-3)
+    return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) * (1 + 1e-6 * np.random.rand()) 
 
 if __name__ == "__main__":
     fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.5, 20), (0.9, 1.1), 0.1, 10 , 3)

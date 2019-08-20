@@ -87,7 +87,7 @@ def f(x):
     n, d = x.shape
     return inner1d(x, x) + np.random.uniform(1e-3,1e-3)
 """
-def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
+def fd_gradient(f, x, eps,h = None, mode = "fd", tau_1 = 100, tau_2 = 0.1):
     """
     estimate the finite difference interval and finite difference gradient given noise 
     @param f: function f
@@ -102,7 +102,7 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
     """
     dim = len(x)
     if eps <= 1e-12: #If no noise is observed
-        h = np.sqrt(np.finfo(float).eps) * max(max(np.abs(x)),1) #TODO: max(x)?
+        h = np.sqrt(np.finfo(float).eps)  #TODO: max(x)?
         #return np.array([200*(x[1] - x[0]**2)*(-2*x[0]) + 2*(x[0]-1), 200*(x[1] - x[0]**2)]),h
         fx = f(x)
         f_incr = []
@@ -122,9 +122,29 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
                 tmp[d]=h
                 f_decr.append(f(x - tmp))
         return (f_incr - f_decr) / h, h
-
     mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
     if mu is None: return None #if hessian estimate was not found
+    """
+    f_incr = []
+    f_decr = fx if mode == "fd" else []
+    for d in range(dim):
+        tmp = np.zeros(dim)
+        tmp[d] = h
+        f_incr.append(f(x + tmp))
+        if mode == "fd":
+            h = 8 ** 0.25 * (eps / mu) ** 0.5 if h is None else h
+            tmp[d] = h
+        else:
+            h = 3 ** (1/3) * (eps / mu) ** (1/3) if h is None else h
+            tmp[d] = h
+            h *= 2
+            f_decr.append(f(x - tmp))
+    if isinstance(f_decr, list): f_decr = np.array(f_decr)
+    f_incr = np.array(f_incr)
+    return (f_incr - f_decr) / h, h
+    """
+
+    
     if mode == "fd": #forward difference mode
         fx = f(x) #evaluate f(x)
         if h is None: #if finite difference interval not given
@@ -139,6 +159,7 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
         f_incr = np.array(f_incr)
         f_decr = fx
     else:
+
         #calculate d-th component of the central difference approximation of the gradient of f at x
         if h is None:
             h = 3 ** (1/3) * (eps / mu) ** (1/3)
@@ -148,6 +169,7 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
         h *= 2
     #print("mu, h", mu, h)
     return (f_incr - f_decr) / h, h
+    
 
 
 """

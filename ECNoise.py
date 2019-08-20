@@ -104,6 +104,7 @@ class ECNoise(object):
 Test case
 """
 def f(x):
+    return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) * (1 + 1e-6 * np.random.rand()) 
     return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2 
 
 if __name__ == "__main__":
