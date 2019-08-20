@@ -37,7 +37,7 @@ class LBFGS(object):
 			self.y = self.y[1:]
 			self.rho = self.rho[1:]
 
-	def calculate_direction(self, grad, mode = "bfgs"):
+	def calculate_direction(self, grad, mode = "lbfgs"):
 		"""
 		calculate the LBFGS direction - H * grad
 

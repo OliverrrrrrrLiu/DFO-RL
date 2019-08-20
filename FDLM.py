@@ -12,7 +12,7 @@ class FDLM(object):
     The class of Finite Difference L-BFGS Method(FDLM)
     algorithm to minimize a noisy function
     """
-    def __init__(self, f, ecn_params, ls_params, rec_params, zeta, m, output_level):
+    def __init__(self, f, ecn_params, ls_params, rec_params, zeta, m, output_level, mode = "cd", tol = 1e-8):
         """
         @param ecn_params: tuple of ECNoise parameters (h, breadth, max_iter)
         @param ls_params: tuple of line search parameters (c1, c2, max_iter)
@@ -29,6 +29,8 @@ class FDLM(object):
         self.rec = Recovery(f, *rec_params, self.noise_f, self.ls)
         self.lbfgs = LBFGS(m)
         self.output_level = output_level
+        self.mode = mode
+        self.tol = tol
 
     def get_stencil_pt(self, x, h):
         """
@@ -59,9 +61,7 @@ class FDLM(object):
         """
         f_val = self.f(x) #evaluate the function value at initial iterate
         noise = self.noise_f.estimate(x) #estimate noise level at initial iterate
-        print("juju", x)
-        grad, h = fd_gradient(f, x, noise) #compute finite difference interval and the corresponding finite gradient estimate
-        print("grad",grad)
+        grad, h = fd_gradient(f, x, noise, mode=self.mode) #compute finite difference interval and the corresponding finite gradient estimate
         norm_grad_k = np.max(np.abs(grad))
         stencil_pt, stencil_val = self.get_stencil_pt(x, h) #calculate the best stencil points and its function value
         k, fval_history = 0, [f_val] #set iteration counter and function value history
@@ -76,15 +76,15 @@ class FDLM(object):
             print('%6i %23.16e  %9.2e %6i %9.2e' %
               (k, f_val, step, num_func_it, norm_grad_k))
 
-        while not self.is_convergence(f_val, fval_history, norm_grad_k, 5, 2e-6): #while convergence test is not satisfied
+        while not self.is_convergence(f_val, fval_history, norm_grad_k, 5, self.tol): #while convergence test is not satisfied
         #while not self.is_convergence(grad, f_val, 1e-5):
             #print("k", k)
             d = self.lbfgs.calculate_direction(grad) #calculate LBFGS direction
-            new_pt, step, flag = self.ls.search((x, f_val, grad), d, noise) #conduct linesearch to find the next iterate
+            new_pt, step, flag = self.ls.search((x, f_val, grad), d, noise=noise, mode=self.mode) #conduct linesearch to find the next iterate
             if not flag: #if linesearch failed 
                 new_pt, h, noise = self.rec.recover((x, f_val, grad), h, d, (stencil_pt, stencil_val)) #call recovery mechanism
             x_new, f_val_new = new_pt 
-            grad_new, _ = fd_gradient(f, x_new, noise, h) #calculate the finite-difference gradient estimator for the next iterate
+            grad_new, _ = fd_gradient(f, x_new, noise, h, mode=self.mode) #calculate the finite-difference gradient estimator for the next iterate
             stencil_pt, stencil_val = self.get_stencil_pt(x_new, h) #calculate the new best stencil point
             s, y = x_new - x, grad_new - grad #calculate LBFGS parameter
             if self.curvature_satisfied(s, y): #if the curvature condition is satisfied
@@ -164,6 +164,6 @@ def f(x):
     return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) * (1 + 1e-6 * np.random.rand()) 
 
 if __name__ == "__main__":
-    fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.5, 20), (0.9, 1.1), 0.1, 10 , 3)
+    fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.5, 20), (0.9, 1.1), 0.1, 10,3)
     fdlm.run(np.array([2, 2]))
 
