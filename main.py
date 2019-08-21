@@ -3,6 +3,21 @@ import numpy as np
 from FDLM import *
 
 
+def rosenbrock(x):
+	return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2 #* (1 + 1e-6 * np.random.rand())
+
+def f1(x):
+	return (np.inner(x,x)) #* (1 + 1e-6*np.random.rand())
+
+def f2(x):
+	return (x[0] - 1)**2 + (np.exp(x[1]) - 1)/(np.exp(x[1]) + 1) + 0.1 * np.exp(-x[1])
+
+def f3(x):
+	return (x[0] - 1)**4 + (np.exp(x[1]) - 1)/(np.exp(x[1]) + 1) + 0.1 * np.exp(-x[1])
+
+mode_dict = {"fd": "forward difference", "cd": "central difference"}
+function_dict = {"rosenbrock": rosenbrock, "f1": f1, "f2": f2, "f3": f3}
+
 parser = argparse.ArgumentParser(description="Argument parser for FDLM driver script")
 parser.add_argument("--function", default="rosenbrock", type=str, help="Function to be optimized")
 parser.add_argument("--ecn_parameter", default=(1e-8, 7, 100), type=tuple, help="ECNoise parameters in the order of (spacing, breadth, max_iter)")
@@ -16,8 +31,7 @@ parser.add_argument("--tol", default=1e-8, type=float, help="Tolerance level for
 #.add_argument("--method", default="lbfgs", help="Optimization method")
 parser.add_argument("--x0", default=[2, 2], help="Starting point")
 
-def rosenbrock(x):
-	return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) * (1 + 1e-6 * np.random.rand())
+
 
 def main(args):
 	assert len(args.ecn_parameter) == 3
@@ -25,8 +39,9 @@ def main(args):
 	assert len(args.rec_parameter) == 2
 	assert args.output_level in [0, 1, 2]
 	assert args.mode in ["fd", "cd"]
+	assert args.function in function_dict.keys()
 
-	mode_dict = {"fd": "forward difference", "cd": "central difference"}
+
 
 	print("Evaluating {} function".format(args.function))
 	print("ECNoise parameter: {}".format(args.ecn_parameter))
@@ -36,8 +51,8 @@ def main(args):
 	print("LBFGS memory length: {}".format(args.m))
 	print("Gradient evaluation mode: {}".format(mode_dict[args.mode]))
 	print("convergence tolerance level: {}".format(args.tol))
-	if args.function == "rosenbrock":
-		f = rosenbrock
+
+	f = function_dict[args.function]
 	fdlm = FDLM(f, args.ecn_parameter, args.ls_parameter, args.rec_parameter, args.zeta, args.m, args.output_level, args.mode, args.tol)
 	time.sleep(1)
 	start = time.time()
@@ -46,4 +61,8 @@ def main(args):
 
 if __name__ == "__main__":
 	args = parser.parse_args()
+	XX = np.asarray(args.x0)
+	print(XX.shape)
 	main(args)
+
+#python main.py --function f2  --mode cd

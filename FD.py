@@ -101,9 +101,9 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
     @return: finite difference gradient, finite difference interval 
     """
     dim = len(x)
-    if eps <= 1e-12: #If no noise is observed
+    if eps <= 1e-6:#np.finfo(float).eps: #If no noise is observed
         h = np.sqrt(np.finfo(float).eps)  #TODO: max(x)?
-        #return np.array([200*(x[1] - x[0]**2)*(-2*x[0]) + 2*(x[0]-1), 200*(x[1] - x[0]**2)]),h
+        #return np.array([200*(x[1] - x[0]**2)*(-2*x[0]) + 2*(x[0]-1), 200*(x[1] - x[0]**2)]),0.1
         fx = f(x)
         f_incr = []
         #calculate d-th component of the forward difference approximation of the gradient of f at x

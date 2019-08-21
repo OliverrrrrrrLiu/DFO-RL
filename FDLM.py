@@ -76,10 +76,11 @@ class FDLM(object):
             print('%6i %23.16e  %9.2e %6i %9.2e' %
               (k, f_val, step, num_func_it, norm_grad_k))
 
-        while not self.is_convergence(f_val, fval_history, norm_grad_k, 5, self.tol): #while convergence test is not satisfied
+        while not self.is_convergence(f_val, fval_history, norm_grad_k, 5, self.tol) and k <= 200: #while convergence test is not satisfied
         #while not self.is_convergence(grad, f_val, 1e-5):
             #print("k", k)
             d = self.lbfgs.calculate_direction(grad) #calculate LBFGS direction
+            #d = -grad
             new_pt, step, flag = self.ls.search((x, f_val, grad), d, noise=noise, mode=self.mode) #conduct linesearch to find the next iterate
             if not flag: #if linesearch failed 
                 new_pt, h, noise = self.rec.recover((x, f_val, grad), h, d, (stencil_pt, stencil_val)) #call recovery mechanism
@@ -128,9 +129,10 @@ class FDLM(object):
             TRUE: curvature condition is satisfied
             FALSE: curvature condition is not satisfied
         """
+        #print(np.inner(s, y) >= self.zeta * norm(s) * norm(y))
         return np.inner(s, y) >= self.zeta * norm(s) * norm(y)
 
-    def is_convergence(self, f_val, fval_history, norm_grad, history_len = 5, tol = 1e-8):
+    def is_convergence(self, f_val, fval_history, norm_grad, history_len = 5, tol = 1e-6):
         """
         convergence test for current iterate: terminates if either the moving average condition or gradient condition holds
 
@@ -160,10 +162,14 @@ def f(x):
 """
 
 def f(x):
+    #return (np.inner(x,x))
     #return np.inner(x,x) + x[0] + 1e-2*np.random.rand()#np.random.uniform(-1e-3,1e-3)
-    return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) * (1 + 1e-6 * np.random.rand()) 
+    return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) #* (1 + 1e-6 * np.random.rand()) 
+    #return x[1] + 0.00001 * (x[1] - x[0])**2
+    #return (x[0] + 1)**3/3 + x[1]
+    #return np.sin(x[0] + x[1]) + (x[0] - x[1])**2 - 1.5 * x[0] + 2.5*x[1] + 1
 
 if __name__ == "__main__":
-    fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.5, 20), (0.9, 1.1), 0.1, 10,3)
-    fdlm.run(np.array([2, 2]))
+    fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.5, 20), (0.9, 1.1), 0.001, 5,3)
+    fdlm.run(np.array([20, 20]))
 

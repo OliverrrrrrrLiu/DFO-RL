@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: PyCUTEst automatic test function interface builder
+Version: 1.0
+Summary: Builds a CUTEst test function interface for Python.
+Home-page: UNKNOWN
+Author: Arpad Buermen, Jaroslav Fowkes, Lindon Roberts
+Author-email: arpadb@fides.fe.uni-lj.si, fowkes@maths.ox.ac.uk, robertsl@maths.ox.ac.uk
+License: GNU GPL
+Description: Builds a CUTEst test function interface for Python.
+Platform: Linux

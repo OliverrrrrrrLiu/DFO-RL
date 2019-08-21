@@ -73,7 +73,6 @@ class LineSearch(object):
 		alpha = 1 #stepsize 
 		ls_counter = 0 #line search counter
 		xk, f_xk, grad_xk = orig_pt
-		print(noise, mode)
 		while ls_counter < self.max_iter:
 			relax = ls_counter >= 1
 			x_trial = xk + alpha * d
@@ -93,6 +92,7 @@ class LineSearch(object):
 					alpha = 2 * l 
 			else:
 				if armijo_satisfied:
+					print("FAILFAILFAIL")
 					return(x_trial, f_trial), alpha, True
 			ls_counter+= 1
 		return (x_trial, f_trial), alpha, False
