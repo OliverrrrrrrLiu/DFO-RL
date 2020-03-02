@@ -62,34 +62,20 @@ class LBFGS(object):
 		# 	self.H = multi_dot([tmp, self.H, tmp]) + self.rho[-1] * np.outer(self.s[-1], self.s[-1])
 		# 	return -np.matmul(self.H, grad)
 		else:
+			#LBFGS two-loop recursion 
 			q = grad.copy() #Will change this vec
 			alpha = np.zeros(k)
 			for i in range(k-1,-1,-1):
 				alpha[i] = self.rho[i] * np.inner(self.s[i],q)
-				q -= alpha[i] * self.y[i]
-			#gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1], self.y[-1])
-			#r = gamma_k * q
-			r = q.copy()
+				q = q - alpha[i] * self.y[i]
+			gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1], self.y[-1])
+			r = gamma_k * q
+			#r = q.copy()
 			for i in range(k):
 				beta = self.rho[i] * np.inner(self.y[i], r)
-				r += self.s[i] * (alpha[i] - beta)
+				r = r + self.s[i] * (alpha[i] - beta)
 			self.iter += 1
 			return -r
-
-
-		# #LBFGS two-loop recursion: recusively compute direction = -(H*grad)
-		# q = grad #create copy of current gradient
-		# alpha = np.zeros(self.m) 
-		# for i in range(self.m):
-		# 	alpha[i] = self.rho[i] * np.inner(self.s[i], q)
-		# 	q -= alpha[i] * self.y[i]
-		# gamma_k = np.inner(self.s[-1],self.y[-1]) / np.inner(self.y[-1],self.y[-1])
-		# r = gamma_k * q
-		# for i in range(self.m-1,-1,-1):
-		# 	beta = self.rho[i] * np.inner(self.y[i],r)
-		# 	r += self.s[i] * (alpha[i] - beta)
-		# self.iter += 1 #increase iteration counter
-		# return -r
 
 """
 test problem 

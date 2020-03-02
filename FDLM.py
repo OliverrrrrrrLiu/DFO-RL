@@ -12,7 +12,7 @@ class FDLM(object):
     The class of Finite Difference L-BFGS Method(FDLM)
     algorithm to minimize a noisy function
     """
-    def __init__(self, f, ecn_params, ls_params, rec_params, zeta, m, output_level, mode = "cd", tol = 1e-8):
+    def __init__(self, f, ecn_params, ls_params, rec_params, zeta, m, output_level, his_len = 5, mode = "cd", tol = 1e-6):
         """
         @param ecn_params: tuple of ECNoise parameters (h, breadth, max_iter)
         @param ls_params: tuple of line search parameters (c1, c2, max_iter)
@@ -31,6 +31,7 @@ class FDLM(object):
         self.output_level = output_level
         self.mode = mode
         self.tol = tol
+        self.his_len = his_len
 
     def get_stencil_pt(self, x, h):
         """
@@ -59,8 +60,10 @@ class FDLM(object):
 
         @print: current iteration, current iterate, current function value, current gradient
         """
+        print("Running from starting point:", x)
         f_val = self.f(x) #evaluate the function value at initial iterate
-        noise = self.noise_f.estimate(x) #estimate noise level at initial iterate
+        noise,_,_ = self.noise_f.estimate(x) #estimate noise level at initial iterate
+        print("noise",noise)
         grad, h = fd_gradient(f, x, noise, mode=self.mode) #compute finite difference interval and the corresponding finite gradient estimate
         norm_grad_k = np.max(np.abs(grad))
         stencil_pt, stencil_val = self.get_stencil_pt(x, h) #calculate the best stencil points and its function value
@@ -76,7 +79,7 @@ class FDLM(object):
             print('%6i %23.16e  %9.2e %6i %9.2e' %
               (k, f_val, step, num_func_it, norm_grad_k))
 
-        while not self.is_convergence(f_val, fval_history, norm_grad_k, 5, self.tol) and k <= 200: #while convergence test is not satisfied
+        while not self.is_convergence(f_val, fval_history, norm_grad_k,  self.tol) and k <= 10000: #while convergence test is not satisfied
         #while not self.is_convergence(grad, f_val, 1e-5):
             #print("k", k)
             d = self.lbfgs.calculate_direction(grad) #calculate LBFGS direction
@@ -93,6 +96,8 @@ class FDLM(object):
             x, f_val, grad = x_new, f_val_new, grad_new #update iterates
             norm_grad_k = np.max(np.abs(grad))
             fval_history.append(f_val) #append new function evaluations 
+            if len(fval_history) > self.his_len: #history len
+                fval_history = fval_history[1:]
             k += 1 #increase iteration counter
             if self.output_level >= 2:
                 if k % 10 == 0:
@@ -114,7 +119,9 @@ class FDLM(object):
             print('Number of function evaluations..: %d' % num_func_evals)
             print('')
 
+
         # Return output arguments
+        print("Returned point:", x)
         return x, f_val, stats
 
 
@@ -130,7 +137,7 @@ class FDLM(object):
             FALSE: curvature condition is not satisfied
         """
         #print(np.inner(s, y) >= self.zeta * norm(s) * norm(y))
-        return np.inner(s, y) >= self.zeta * norm(s) * norm(y)
+        return np.inner(s, y) >= self.zeta * norm(s) * norm(y) and np.inner(s,y) > 0
 
     def is_convergence(self, f_val, fval_history, norm_grad, history_len = 5, tol = 1e-6):
         """
@@ -148,11 +155,11 @@ class FDLM(object):
         """
         if len(fval_history) <= 1:
             return norm_grad <= tol
-        if len(fval_history) > history_len: #if more than history_len function values have been stored
-            fval_history = fval_history[1:] #move the oldest one
+        #if len(fval_history) > history_len: #if more than history_len function values have been stored
+        #    fval_history = fval_history[1:] #move the oldest one
         fval_ma = np.mean(fval_history) #calculate the moving average of length history_len
         #check moving average condition and gradient max norm condition; if either is met, the termination tolerance is met
-        return norm_grad <= tol #or abs(f_val - fval_ma) <= tol * max(1, abs(fval_ma))
+        return norm_grad <= tol or abs(f_val - fval_ma) <= tol * max(1, abs(fval_ma))
 
 """
 test problem
@@ -163,13 +170,18 @@ def f(x):
 
 def f(x):
     #return (np.inner(x,x))
-    #return np.inner(x,x) + x[0] + 1e-2*np.random.rand()#np.random.uniform(-1e-3,1e-3)
-    return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) #* (1 + 1e-6 * np.random.rand()) 
+    #return (np.inner(x,x) + x[0])*(1+ 1e-2*np.random.rand())#np.random.uniform(-1e-3,1e-3)
+    #return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) * (1 + 1e-5 * np.random.rand()) 
     #return x[1] + 0.00001 * (x[1] - x[0])**2
-    #return (x[0] + 1)**3/3 + x[1]
-    #return np.sin(x[0] + x[1]) + (x[0] - x[1])**2 - 1.5 * x[0] + 2.5*x[1] + 1
+
+    # evaluate the Rosenbrock function
+    _x = np.zeros(len(x))
+    _x[:-1] = x[1:]
+    res = np.sum(100 * (_x[:-1] - x[:-1] ** 2) ** 2 + (1 - x[:-1]) ** 2) *(1 + 1e-2 * np.random.rand())
+    return res
 
 if __name__ == "__main__":
-    fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.5, 20), (0.9, 1.1), 0.001, 5,3)
-    fdlm.run(np.array([20, 20]))
+    fdlm = FDLM(f, (1e-8, 7, 100), (1e-4, 0.9, 20), (0.9, 1.1), 0, 10,3)
+    x = np.array([-1.8,2]).astype(float)
+    fdlm.run(x)
 

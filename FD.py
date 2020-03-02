@@ -4,6 +4,7 @@ from numpy.linalg import norm
 
 # TODO: implement second-order finite difference table when mu_2 is not found
 # TODO: estimate maxHessian only once
+############TODO: the f_incr of CD is wrong
 
 class MaxHessian(object):
     """Estimate the maximum absolute Hessian entry for function f"""
@@ -101,9 +102,11 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
     @return: finite difference gradient, finite difference interval 
     """
     dim = len(x)
+    #return np.array([-400 * x[0] * (x[1]-x[0]**2) - 2 * (1-x[0]), 200 * (x[1]-x[0]**2)]), 0.1
+    #return np.array([400 * x[0]**3 - 400 * x[0] * x[1] + 2 * x[0] - 2, 200 * (x[1]-x[0]**2)]),0.1
+    #return np.array([200*(x[1] - x[0]**2)*(-2*x[0]) + 2*(x[0]-1), 200*(x[1] - x[0]**2)]),0.1
     if eps <= 1e-6:#np.finfo(float).eps: #If no noise is observed
         h = np.sqrt(np.finfo(float).eps)  #TODO: max(x)?
-        #return np.array([200*(x[1] - x[0]**2)*(-2*x[0]) + 2*(x[0]-1), 200*(x[1] - x[0]**2)]),0.1
         fx = f(x)
         f_incr = []
         #calculate d-th component of the forward difference approximation of the gradient of f at x
@@ -121,6 +124,7 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
                 tmp = np.zeros(dim)
                 tmp[d]=h
                 f_decr.append(f(x - tmp))
+            h = 2*h
         return (f_incr - f_decr) / h, h
 
     mu = MaxHessian(f, eps, tau_1, tau_2).estimate(x, direction = None)
@@ -148,26 +152,32 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
     if h is None: #if finite difference interval not given
         h = 8 ** 0.25 * (eps / mu) ** 0.5
     #h_mat = np.diag(np.ones(dim) * h) TODO vectorize
-    f_incr = []
-    #calculate d-th component of the forward difference approximation of the gradient of f at x
-    for d in range(dim): 
-        tmp = np.zeros(dim)
-        tmp[d] = h
-        f_incr.append(f(x + tmp))
-    f_incr = np.array(f_incr)
+
     
     if mode == "fd": #forward difference mode
         f_decr = fx
+        f_incr = []
+    #calculate d-th component of the forward difference approximation of the gradient of f at x
+        for d in range(dim): 
+            tmp = np.zeros(dim)
+            tmp[d] = h
+            f_incr.append(f(x + tmp))
+        f_incr = np.array(f_incr)
     else:
+        f_incr = []
         f_decr = []
         #calculate d-th component of the central difference approximation of the gradient of f at x
         if h is None:
             h = 3 ** (1/3) * (eps / mu) ** (1/3)
-        for d in range(dim):
+    #calculate d-th component of the forward difference approximation of the gradient of f at x
+        for d in range(dim): 
             tmp = np.zeros(dim)
             tmp[d] = h
+            f_incr.append(f(x + tmp))
             f_decr.append(f(x - tmp))
+        f_incr = np.array(f_incr)
         f_decr = np.array(f_decr)
+        h = 2*h
     #print("mu, h", mu, h)
     return (f_incr - f_decr) / h, h
     
@@ -177,11 +187,11 @@ def fd_gradient(f, x, eps,h = None, mode = "cd", tau_1 = 100, tau_2 = 0.1):
 test
 """
 def f(x):
-    return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2 
-
+    #return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 )*(1 + 1e-6*np.random.normal(0,1))
+    return np.inner(x,x) *(1+ 1e-2*np.random.randn())
 
 if __name__ == "__main__":
-    print(fd_gradient(f, np.array([2,2]),0))
+    print(fd_gradient(f, np.array([500.0,500.0]),1830.9999))
 
 
 # if __name__ == "__main__":

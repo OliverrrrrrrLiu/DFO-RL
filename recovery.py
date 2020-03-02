@@ -36,7 +36,7 @@ class Recovery(object):
 		print("RECOVER")
 		x_k, f_k, grad_hk = orig_pt #extract current iterate information
 		x_s, f_s = stencil_pt #extract current stencil point information
-		noise = self.noise_f.estimate(x_k, direction = d_k) #reestimate noise along the current search direction
+		noise,_,_ = self.noise_f.estimate(x_k, direction = d_k) #reestimate noise along the current search direction
 		#print("noise", noise, d_k)
 		grad, h_new = fd_gradient(self.f, x_k, noise) #recalculate finite difference interval and new finite difference gradient estimator
 		#print("h_new:", h_new, h)
@@ -56,6 +56,6 @@ class Recovery(object):
 				x, fval = x_s, f_s #accept stencil point
 			else:
 				x, fval = x_k, f_k
-				noise = self.noise_f.estimate(x_k) #reestimate the noise along a random direction
+				noise,_,_ = self.noise_f.estimate(x_k) #reestimate the noise along a random direction
 				grad, h = fd_gradient(self.f, x_k, noise) #reestimate finite difference interval
 		return (x, fval), h, noise #return new interval and noise level without changing curren iterate
