@@ -4,12 +4,11 @@ from FD import fd_gradient
 from numpy.linalg import norm
 from linesearch import LineSearch
 
-#TODO: separate grad estimation from h calculation
-#TODO: function counter
+###This code assumes that the noise level of the function is known!!
 
 class Recovery(object):
 	"""Recovery scheme to determine the cause of the failure of linesearch and to take corrective action"""
-	def __init__(self, f, gamma_1, gamma_2, noise_f, ls):
+	def __init__(self, f, gamma_1, gamma_2, noise, ls):
 		"""initilization
 		@param f: noisy function f
 		@param gamma_i: finite difference interval acceptance/rejection parameters
@@ -19,7 +18,7 @@ class Recovery(object):
 		self.gamma_1 = gamma_1
 		self.gamma_2 = gamma_2
 		self.t_rec = 0
-		self.noise_f = noise_f
+		self.noise = noise
 		self.ls = ls
 
 	def recover(self, orig_pt, h, d_k, stencil_pt):
@@ -37,10 +36,8 @@ class Recovery(object):
 		print("RECOVER")
 		x_k, f_k, grad_hk = orig_pt #extract current iterate information
 		x_s, f_s = stencil_pt #extract current stencil point information
-		noise,_,_,ec_counter = self.noise_f.estimate(x_k, direction = d_k) #reestimate noise along the current search direction
-		rec_counter += ec_counter
 		#print("noise", noise, d_k)
-		grad, h_new = fd_gradient(self.f, x_k, noise) #recalculate finite difference interval and new finite difference gradient estimator
+		grad, h_new = fd_gradient(self.f, x_k, self.noise) #recalculate finite difference interval and new finite difference gradient estimator
 		dim = len(x_k)
 		rec_counter += dim
 		#print("h_new:", h_new, h)
@@ -60,8 +57,6 @@ class Recovery(object):
 				x, fval = x_s, f_s #accept stencil point
 			else:
 				x, fval = x_k, f_k
-				noise,_,_, ec_counter = self.noise_f.estimate(x_k) #reestimate the noise along a random direction
-				rec_counter += ec_counter
-				grad, h = fd_gradient(self.f, x_k, noise) #reestimate finite difference interval
+				grad, h = fd_gradient(self.f, x_k, self.noise) #reestimate finite difference interval
 				rec_counter += dim 
-		return (x, fval), h, noise, rec_counter #return new interval and noise level without changing curren iterate
+		return (x, fval), h, self.noise, rec_counter #return new interval and noise level without changing curren iterate

@@ -5,7 +5,7 @@ import warnings
 
 class ECNoise(object):
     """
-    Determines the nosie of a function from the function values at equally-spaced points
+    Determines the noise of a function from the function values at equally-spaced points
     """
     def __init__(self, f, h = 1e-6, breadth = 3, max_iter = 10):
         """
@@ -94,11 +94,12 @@ class ECNoise(object):
         for i in range(self.max_iter):
             noise, levels, inform = self.noise_estimate(x, direction) 
             if inform == 1: #if noise is detected
-                return noise, levels, inform
+                return noise, levels, inform, self.total
             scale = 100 if inform == 2 else 1 / 100 #if noise is not detected, modify h according to inform 
             self.h *= scale
         warnings.warn("Cannot estimate a noise level from {} iterations".format(self.max_iter))
-        return noise, levels, inform
+        print(noise)
+        return noise, levels, inform, self.total
 
 
 """
@@ -109,7 +110,7 @@ def f(x):
     #return (100*(x[1]-x[0]**2)**2 + (1-x[0])**2 ) * (1 + 1e-2 * np.random.normal(0,1)) 
     #return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2  + 1e-23 * np.random.normal(0,1)
     ###########Linear######################
-    #return 4*x[0] + 5*x[1] + 1e-15*np.random.normal(0,1)
+    return 4*x[0] + 10000000000000000*x[1] + 1e-5*np.random.normal(0,1)
     #return (4*x[0] + 5*x[1]) * (1 + 1e-15*np.random.normal(0,1))
     ###########Quadratic###################
     #return np.inner(x,x) + np.random.uniform(-1e-3,1e-3)
@@ -123,18 +124,18 @@ def f(x):
     ###########tangent#####################
     #return np.tan(x) + 1e-5*np.random.normal(0,1)
     #return np.tan(x) * (1 + 1e-5*np.random.normal(0,1))
-    _x = np.zeros(len(x))
-    _x[:-1] = x[1:]
-    res = np.sum(100 * (_x[:-1] - x[:-1] ** 2) ** 2 + (1 - x[:-1]) ** 2) *(1 + 1e-2 * np.random.rand())
-    return res
+    #_x = np.zeros(len(x))
+    #_x[:-1] = x[1:]
+    #res = np.sum(100 * (_x[:-1] - x[:-1] ** 2) ** 2 + (1 - x[:-1]) ** 2) *(1 + 1e-2 * np.random.rand())
+    #return res
 
 if __name__ == "__main__":
-    #x = np.array([np.pi - 1e-15])
-    #x = np.array([1,1])
-    x = np.array([1,1,1,1,1])
+    #x = np.array([np.pi/2 - 1e-15])
+    x = np.array([1,1])
+    #x = np.array([1,1,1,1,1])
     h = 1e-6
     ecn = ECNoise(f, h = h, breadth = 3, max_iter = 10)
-    noise, levels, informs = ecn.estimate(x)
+    noise, levels, informs,evals = ecn.estimate(x)
     print(noise, informs)
 
 # def f(x):
