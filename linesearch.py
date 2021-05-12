@@ -40,10 +40,13 @@ class LineSearch(object):
 		@param d: search direction
 		"""
 		x, fx_orig, grad_fx_orig = orig_pt #extract current point information
-		grad_fx_new, _ = fd_gradient(self.f, x_new, noise, mode=mode) #evaluate gradient at trial point
+		#grad_fx_new, _ = fd_gradient(self.f, x_new, noise, mode=mode) #evaluate gradient at trial point
 		#print("gTP_old",np.inner(grad_fx_orig, d), "gTP_new", np.inner(grad_fx_new, d))
-		return np.inner(grad_fx_new, d) >= self.c2 * np.inner(grad_fx_orig, d)
-
+		#return np.inner(grad_fx_new, d) >= self.c2 * np.inner(grad_fx_orig, d)
+		dirdev_new, _ = fd_gradient(self.f, x_new, noise, mode=mode, direction = d) #direcctional derivative
+		#grad_new, _ = fd_gradient(self.f, x_new, noise, mode=mode)
+		return dirdev_new >= self.c2 * np.inner(grad_fx_orig, d) #directional derivative
+		#return np.inner(grad_new, d) >= self.c2 * np.inner(grad_fx_orig, d)
 	# def search(self, orig_pt, d, noise = 0.0):
 	# 	"""
 	# 	Search for stepsize that satisfies the armijo-wolfe conditions
@@ -92,19 +95,27 @@ class LineSearch(object):
 	# 		ls_counter += 1
 	# 	return (x_trial, f_trial), alpha, False
 
+###TODO: check ls_counter
 
-	def search(self, orig_pt, d, noise = 0.0, mode = "cd"):
+	def search(self, orig_pt, d, noise = 0.0, mode = "fd"):
 		l = 0 #lower bound
 		u = np.inf #upper boundí
 		alpha = 1 #stepsize 
 		ls_counter = 0 #line search counter
 		xk, f_xk, grad_xk = orig_pt
+		dim = len(xk)
+		eval_counter = 0
 		while ls_counter < self.max_iter:
 			relax = ls_counter >= 1
 			x_trial = xk + alpha * d
 			f_trial = self.f(x_trial)
-			armijo_satisfied = self.is_armijo(orig_pt, f_trial, step = alpha, d = d, noise = 0)
+			eval_counter += 1
+			armijo_satisfied = self.is_armijo(orig_pt, f_trial, step = alpha, d = d, noise = noise)
 			wolfe_satisfied = self.is_wolfe(orig_pt, x_trial, d, noise= 0, mode=mode)
+			if mode == "fd":
+				eval_counter += 1#*dim
+			else:
+				eval_counter += 2 #* dim
 			#if ls_counter != self.max_iter - 1:	
 			if not armijo_satisfied:
 				u = alpha
@@ -112,7 +123,7 @@ class LineSearch(object):
 				l = alpha
 			else:
 				#print("ls", ls_counter)
-				return (x_trial, f_trial), alpha, True
+				return (x_trial, f_trial), alpha, True, eval_counter
 			if u < np.inf:
 				alpha = (l + u)/2
 			else:
@@ -121,5 +132,5 @@ class LineSearch(object):
 			# 	if armijo_satisfied:
 			# 		return(x_trial, f_trial), alpha, True
 			ls_counter+= 1
-		return (x_trial, f_trial), alpha, False
+		return (x_trial, f_trial), alpha, False, eval_counter
 
